@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { profileApi } from '@/db/api';
+import { supabase } from '@/db/supabase';
 import { Profile } from '@/types/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,7 +50,54 @@ export default function CustomerProfile() {
 
   useEffect(() => {
     loadProfile();
-  }, []);
+
+    // Set up realtime subscription for profile changes
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Profile updated in realtime:', payload);
+          const updatedProfile = payload.new as Profile;
+          
+          // Update local state with new profile data
+          setProfile(updatedProfile);
+          setFormData({
+            full_name: updatedProfile.full_name || '',
+            email: updatedProfile.email || '',
+            phone: updatedProfile.phone || '',
+            bio: updatedProfile.bio || '',
+            address: updatedProfile.address || '',
+            city: updatedProfile.city || '',
+            state: updatedProfile.state || '',
+            zip_code: updatedProfile.zip_code || '',
+            country: updatedProfile.country || 'USA',
+          });
+
+          // Show toast notification for external updates
+          if (!editing) {
+            toast({
+              title: 'Profile Updated',
+              description: 'Your profile has been updated from another device or session.',
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, editing]);
 
   const loadProfile = async () => {
     try {
