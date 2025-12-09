@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Camera, X, AlertCircle, Settings } from 'lucide-react';
+import { Camera, X, AlertCircle, Upload, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -14,9 +14,11 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string>('');
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isInitializedRef = useRef(false);
   const hasScannedRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Prevent double initialization
@@ -32,33 +34,40 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           const errorMsg = 'Camera not supported on this device or browser';
           setError(errorMsg);
+          setShowFallback(true);
           onScanError?.(errorMsg);
           return;
         }
 
         // Request camera permission explicitly first
         try {
-          await navigator.mediaDevices.getUserMedia({ 
+          const stream = await navigator.mediaDevices.getUserMedia({ 
             video: { facingMode: 'environment' } 
           });
+          // Stop the stream immediately - we just wanted to check permission
+          stream.getTracks().forEach(track => track.stop());
         } catch (permError: any) {
           console.error('[QRScanner] Permission error:', permError);
           
           if (permError.name === 'NotAllowedError' || permError.name === 'PermissionDeniedError') {
             setPermissionDenied(true);
-            setError('Camera permission denied. Please allow camera access in your browser settings.');
+            setError('Camera permission denied. Use the "Upload Photo" option below instead.');
+            setShowFallback(true);
             onScanError?.('Camera permission denied');
             return;
           } else if (permError.name === 'NotFoundError') {
-            setError('No camera found on this device');
+            setError('No camera found. Use the "Upload Photo" option below instead.');
+            setShowFallback(true);
             onScanError?.('No camera found');
             return;
           } else if (permError.name === 'NotReadableError') {
-            setError('Camera is already in use by another application');
+            setError('Camera is in use. Use the "Upload Photo" option below instead.');
+            setShowFallback(true);
             onScanError?.('Camera in use');
             return;
           } else {
-            setError(`Camera error: ${permError.message}`);
+            setError(`Camera error. Use the "Upload Photo" option below instead.`);
+            setShowFallback(true);
             onScanError?.(permError.message);
             return;
           }
@@ -72,7 +81,8 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
         const devices = await Html5Qrcode.getCameras();
         
         if (!devices || devices.length === 0) {
-          setError('No camera found on this device');
+          setError('No camera found. Use the "Upload Photo" option below instead.');
+          setShowFallback(true);
           onScanError?.('No camera found on this device');
           return;
         }
@@ -91,12 +101,11 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
         await scanner.start(
           cameraId,
           {
-            fps: 10, // Frames per second
-            qrbox: { width: 250, height: 250 }, // Scanning box size
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
             aspectRatio: 1.0,
           },
           (decodedText) => {
-            // Success callback - only process once
             if (hasScannedRef.current) {
               console.log('[QRScanner] Already scanned, ignoring duplicate');
               return;
@@ -108,8 +117,6 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
             stopScanner();
           },
           (errorMessage) => {
-            // Error callback (called frequently, so we don't show all errors)
-            // Only log critical errors
             if (errorMessage.includes('NotFoundException') === false) {
               console.warn('[QRScanner] Scan error:', errorMessage);
             }
@@ -120,25 +127,24 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
       } catch (err: any) {
         console.error('[QRScanner] Failed to start scanner:', err);
         
-        // Handle specific error types
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           setPermissionDenied(true);
-          setError('Camera permission denied. Please allow camera access in your browser settings.');
+          setError('Camera permission denied. Use the "Upload Photo" option below instead.');
         } else if (err.name === 'NotFoundError') {
-          setError('No camera found on this device');
+          setError('No camera found. Use the "Upload Photo" option below instead.');
         } else if (err.name === 'NotReadableError') {
-          setError('Camera is already in use by another application');
+          setError('Camera is in use. Use the "Upload Photo" option below instead.');
         } else {
-          setError(err.message || 'Failed to start camera');
+          setError(err.message || 'Failed to start camera. Use the "Upload Photo" option below instead.');
         }
         
+        setShowFallback(true);
         onScanError?.(error || 'Failed to start camera');
       }
     };
 
     initScanner();
 
-    // Cleanup on unmount
     return () => {
       stopScanner();
     };
@@ -161,9 +167,29 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
     onClose?.();
   };
 
-  const openSettings = () => {
-    // This will prompt the user to check their browser settings
-    alert('To enable camera access:\n\n1. Click the lock icon in your browser address bar\n2. Find "Camera" permissions\n3. Change to "Allow"\n4. Refresh the page and try again');
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      // Create a temporary scanner instance for file scanning
+      const tempScanner = new Html5Qrcode('qr-reader-temp');
+      
+      const decodedText = await tempScanner.scanFile(file, true);
+      
+      if (decodedText) {
+        console.log('[QRScanner] File scanned:', decodedText);
+        onScanSuccess(decodedText);
+        handleClose();
+      }
+    } catch (err: any) {
+      console.error('[QRScanner] File scan error:', err);
+      setError('Could not read QR code from image. Please try again with a clearer photo.');
+    }
+  };
+
+  const handleTakePhoto = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -193,8 +219,21 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
         <div className="relative w-full max-w-md">
           {/* QR Reader Element */}
           <div id="qr-reader" className="rounded-lg overflow-hidden shadow-2xl" />
+          
+          {/* Hidden temp element for file scanning */}
+          <div id="qr-reader-temp" className="hidden" />
 
-          {/* Error Message */}
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+
+          {/* Error Message with Fallback Option */}
           {error && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/90 rounded-lg p-4">
               <div className="text-center max-w-sm">
@@ -214,31 +253,35 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
                   </AlertDescription>
                 </Alert>
 
-                {permissionDenied && (
-                  <div className="bg-muted/10 rounded-lg p-4 mb-4 text-left">
-                    <p className="text-white text-sm font-medium mb-2">How to fix:</p>
-                    <ol className="text-white/70 text-xs space-y-1 list-decimal list-inside">
-                      <li>Click the lock icon 🔒 in your browser address bar</li>
-                      <li>Find "Camera" in the permissions list</li>
-                      <li>Change the setting to "Allow"</li>
-                      <li>Refresh the page and try again</li>
-                    </ol>
+                {showFallback && (
+                  <div className="space-y-3">
+                    <div className="bg-primary/10 rounded-lg p-4 mb-4 text-left border border-primary/20">
+                      <p className="text-white text-sm font-medium mb-2">Alternative Method:</p>
+                      <p className="text-white/70 text-xs">
+                        Take a photo of the QR code instead. This works on all devices without camera permissions.
+                      </p>
+                    </div>
+
+                    <Button 
+                      onClick={handleTakePhoto}
+                      className="w-full bg-primary hover:bg-primary/90"
+                      size="lg"
+                    >
+                      <ImageIcon className="w-5 h-5 mr-2" />
+                      Take Photo of QR Code
+                    </Button>
+
+                    {onClose && (
+                      <Button 
+                        onClick={handleClose} 
+                        variant="outline" 
+                        className="w-full"
+                      >
+                        Cancel
+                      </Button>
+                    )}
                   </div>
                 )}
-
-                <div className="flex gap-2">
-                  {permissionDenied && (
-                    <Button onClick={openSettings} variant="secondary" className="flex-1">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Help
-                    </Button>
-                  )}
-                  {onClose && (
-                    <Button onClick={handleClose} variant="outline" className="flex-1">
-                      Close
-                    </Button>
-                  )}
-                </div>
               </div>
             </div>
           )}
@@ -261,6 +304,19 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
           <div className="text-center text-white/80 text-sm space-y-2">
             <p>Point your camera at the QR code on your table</p>
             <p className="text-xs text-white/60">The code will be scanned automatically</p>
+            
+            {/* Alternative option always visible at bottom */}
+            <div className="pt-4">
+              <Button
+                onClick={handleTakePhoto}
+                variant="outline"
+                size="sm"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Or Upload Photo
+              </Button>
+            </div>
           </div>
         </div>
       )}
