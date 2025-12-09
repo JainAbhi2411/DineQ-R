@@ -30,9 +30,15 @@ export function useNotificationSound() {
   }, [settings]);
 
   const playNotificationSound = useCallback(() => {
-    if (!settings.enabled) return;
+    console.log('[NotificationSound] playNotificationSound called, enabled:', settings.enabled);
+    
+    if (!settings.enabled) {
+      console.log('[NotificationSound] Sound is disabled, skipping');
+      return;
+    }
 
     try {
+      console.log('[NotificationSound] Creating audio context with volume:', settings.volume);
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -49,6 +55,8 @@ export function useNotificationSound() {
 
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.3);
+
+      console.log('[NotificationSound] First tone started');
 
       setTimeout(() => {
         const oscillator2 = audioContext.createOscillator();
@@ -67,12 +75,15 @@ export function useNotificationSound() {
         oscillator2.start(audioContext.currentTime);
         oscillator2.stop(audioContext.currentTime + 0.25);
 
+        console.log('[NotificationSound] Second tone started');
+
         setTimeout(() => {
           audioContext.close();
+          console.log('[NotificationSound] Sound playback completed successfully');
         }, 300);
       }, 100);
     } catch (error) {
-      console.error('Failed to play notification sound:', error);
+      console.error('[NotificationSound] Failed to play notification sound:', error);
     }
   }, [settings.enabled, settings.volume]);
 
@@ -97,4 +108,3 @@ export function useNotificationSound() {
     testSound,
   };
 }
-

@@ -94,6 +94,7 @@ export function useNotifications(userId: string | null) {
           setNotifications((prev) => [newNotification, ...prev]);
           setUnreadCount((prev) => prev + 1);
 
+          console.log('[useNotifications] Playing notification sound...');
           playNotificationSound();
 
           toast({
@@ -155,7 +156,7 @@ export function useNotifications(userId: string | null) {
       console.log('[useNotifications] Cleaning up subscription');
       supabase.removeChannel(channel);
     };
-  }, [userId, toast]);
+  }, [userId, toast, playNotificationSound]);
 
   return {
     notifications,
