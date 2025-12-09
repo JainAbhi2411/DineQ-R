@@ -48,6 +48,7 @@
     "html5-qrcode": "^2.3.8",
     "input-otp": "^1.4.2",
     "jspdf": "^3.0.4",
+    "jsqr": "^1.4.0",
     "ky": "^1.13.0",
     "lucide-react": "^0.553.0",
     "miaoda-auth-react": "2.0.6",
