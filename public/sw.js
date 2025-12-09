@@ -1,11 +1,11 @@
 // Service Worker for DineQR PWA
-const CACHE_NAME = 'dineqr-v1';
-const RUNTIME_CACHE = 'dineqr-runtime-v1';
+// IMPORTANT: Increment this version number when deploying updates
+const VERSION = '1.0.2';
+const CACHE_NAME = `dineqr-v${VERSION}`;
+const RUNTIME_CACHE = `dineqr-runtime-v${VERSION}`;
 
 // Assets to cache on install
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/favicon.png',
   '/manifest.json',
 ];
@@ -40,7 +40,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - network first, fallback to cache
+// Fetch event - network first for HTML, cache for assets
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -51,7 +51,25 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Skip Supabase API requests (always fetch fresh)
-  if (url.hostname.includes('supabase')) {
+  if (url.hostname.includes('supabase') || url.hostname.includes('api-integrations')) {
+    return;
+  }
+
+  // ALWAYS use network-first for HTML files (index.html, etc.)
+  if (request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html') || url.pathname === '/') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Don't cache HTML files to always get fresh content
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache only if network fails
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse || caches.match('/index.html');
+          });
+        })
+    );
     return;
   }
 
@@ -75,28 +93,62 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache first strategy for static assets
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(request).then((response) => {
-        // Don't cache non-successful responses
-        if (!response || response.status !== 200 || response.type === 'error') {
+  // Network first for JavaScript and CSS files (to get updates immediately)
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache the new version
+          const responseClone = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => {
+            cache.put(request, responseClone);
+          });
           return response;
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(request);
+        })
+    );
+    return;
+  }
+
+  // Cache first strategy ONLY for images and fonts
+  if (url.pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot)$/)) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
         }
 
-        // Clone the response before caching
-        const responseClone = response.clone();
-        caches.open(RUNTIME_CACHE).then((cache) => {
-          cache.put(request, responseClone);
-        });
+        return fetch(request).then((response) => {
+          // Don't cache non-successful responses
+          if (!response || response.status !== 200 || response.type === 'error') {
+            return response;
+          }
 
+          // Clone the response before caching
+          const responseClone = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => {
+            cache.put(request, responseClone);
+          });
+
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // Default: Network first for everything else
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
         return response;
-      });
-    })
+      })
+      .catch(() => {
+        return caches.match(request);
+      })
   );
 });
 

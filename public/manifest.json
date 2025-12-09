@@ -8,6 +8,9 @@
   "theme_color": "#FF6B35",
   "orientation": "portrait-primary",
   "scope": "/",
+  "permissions": [
+    "camera"
+  ],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
