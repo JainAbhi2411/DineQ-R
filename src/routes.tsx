@@ -25,6 +25,7 @@ import Checkout from './pages/customer/Checkout';
 import OrderHistory from './pages/customer/OrderHistory';
 import PaymentSuccess from './pages/customer/PaymentSuccess';
 import OrderTracking from './pages/customer/OrderTracking';
+import CameraScanTest from './pages/test/CameraScanTest';
 
 interface RouteConfig {
   name: string;
@@ -234,6 +235,13 @@ const routes: RouteConfig[] = [
     visible: false,
     protected: true,
     allowedRoles: ['customer'],
+  },
+   {
+    name: 'Camera Scan Test',
+    path: '/test/camera-scan',
+    component: CameraScanTest,
+    visible: false,
+    protected: false,
   },
 ];
 
