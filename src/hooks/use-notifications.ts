@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/db/supabase';
 import { notificationApi } from '@/db/api';
 import type { Notification } from '@/types/types';
@@ -11,6 +11,12 @@ export function useNotifications(userId: string | null) {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { playNotificationSound } = useNotificationSound();
+  const soundFunctionRef = useRef(playNotificationSound);
+
+  // Update ref when function changes
+  useEffect(() => {
+    soundFunctionRef.current = playNotificationSound;
+  }, [playNotificationSound]);
 
   const loadNotifications = useCallback(async () => {
     if (!userId) {
@@ -95,7 +101,7 @@ export function useNotifications(userId: string | null) {
           setUnreadCount((prev) => prev + 1);
 
           console.log('[useNotifications] Playing notification sound...');
-          playNotificationSound();
+          soundFunctionRef.current();
 
           toast({
             title: newNotification.title,
@@ -156,7 +162,7 @@ export function useNotifications(userId: string | null) {
       console.log('[useNotifications] Cleaning up subscription');
       supabase.removeChannel(channel);
     };
-  }, [userId, toast, playNotificationSound]);
+  }, [userId, toast]);
 
   return {
     notifications,
