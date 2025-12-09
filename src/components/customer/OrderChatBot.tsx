@@ -3,12 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, X, Send, Loader2, ShoppingCart, Check } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, ShoppingCart, Check, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { llmService, LLMMessage, ParsedOrderItem } from '@/services/llm.service';
 import { MenuItem } from '@/types/types';
 import { useToast } from '@/hooks/use-toast';
 import { Streamdown } from 'streamdown';
+
+// Check if APP_ID is configured
+const APP_ID = import.meta.env.VITE_APP_ID;
+const isConfigured = !!APP_ID;
 
 interface ChatMessage {
   id: string;
@@ -46,6 +50,18 @@ export default function OrderChatBot({ menuItems, onAddToCart, onCreateOrder, cl
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
+      // Check if chatbot is properly configured
+      if (!isConfigured) {
+        const errorMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: "⚠️ **Configuration Error**\n\nThe AI chatbot is not properly configured. The `VITE_APP_ID` environment variable is missing.\n\n**For Developers:**\n1. Set `VITE_APP_ID` in your environment variables\n2. Redeploy the application\n3. Check the deployment guide for details\n\n**For Users:**\nPlease contact the administrator to configure the chatbot service.",
+          timestamp: new Date(),
+        };
+        setMessages([errorMessage]);
+        return;
+      }
+
       const welcomeMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
@@ -58,6 +74,16 @@ export default function OrderChatBot({ menuItems, onAddToCart, onCreateOrder, cl
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isProcessing) return;
+
+    // Check configuration before sending
+    if (!isConfigured) {
+      toast({
+        title: 'Configuration Error',
+        description: 'Chatbot is not properly configured. Please check environment variables.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -196,18 +222,28 @@ export default function OrderChatBot({ menuItems, onAddToCart, onCreateOrder, cl
 
   if (!isOpen) {
     return (
-      <Button
-        onClick={() => setIsOpen(true)}
-        className={cn(
-          'fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50',
-          'bg-primary hover:bg-primary/90 text-primary-foreground',
-          'transition-all duration-300 hover:scale-110',
-          className
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          onClick={() => setIsOpen(true)}
+          className={cn(
+            'h-14 w-14 rounded-full shadow-lg',
+            'bg-primary hover:bg-primary/90 text-primary-foreground',
+            'transition-all duration-300 hover:scale-110',
+            !isConfigured && 'opacity-70',
+            className
+          )}
+          size="icon"
+        >
+          {!isConfigured ? (
+            <AlertTriangle className="h-6 w-6" />
+          ) : (
+            <MessageCircle className="h-6 w-6" />
+          )}
+        </Button>
+        {!isConfigured && (
+          <div className="absolute -top-2 -right-2 h-4 w-4 bg-destructive rounded-full animate-pulse" />
         )}
-        size="icon"
-      >
-        <MessageCircle className="h-6 w-6" />
-      </Button>
+      </div>
     );
   }
 
@@ -221,8 +257,19 @@ export default function OrderChatBot({ menuItems, onAddToCart, onCreateOrder, cl
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b bg-primary text-primary-foreground rounded-t-lg">
         <div className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5" />
-          <CardTitle className="text-lg font-semibold">Order Assistant</CardTitle>
+          {!isConfigured ? (
+            <AlertTriangle className="h-5 w-5" />
+          ) : (
+            <MessageCircle className="h-5 w-5" />
+          )}
+          <CardTitle className="text-lg font-semibold">
+            Order Assistant
+            {!isConfigured && (
+              <Badge variant="destructive" className="ml-2 text-xs">
+                Not Configured
+              </Badge>
+            )}
+          </CardTitle>
         </div>
         <Button
           variant="ghost"
@@ -316,13 +363,17 @@ export default function OrderChatBot({ menuItems, onAddToCart, onCreateOrder, cl
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type your order here..."
-              disabled={isProcessing}
+              placeholder={
+                !isConfigured
+                  ? 'Chatbot not configured...'
+                  : 'Type your order here...'
+              }
+              disabled={isProcessing || !isConfigured}
               className="flex-1"
             />
             <Button
               onClick={handleSendMessage}
-              disabled={isProcessing || !inputValue.trim()}
+              disabled={isProcessing || !inputValue.trim() || !isConfigured}
               size="icon"
             >
               {isProcessing ? (
@@ -333,7 +384,13 @@ export default function OrderChatBot({ menuItems, onAddToCart, onCreateOrder, cl
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Try: "I want 2 pizzas and 1 daal tadka"
+            {!isConfigured ? (
+              <span className="text-destructive">
+                ⚠️ Configuration required. Check deployment guide.
+              </span>
+            ) : (
+              'Try: "I want 2 pizzas and 1 daal tadka"'
+            )}
           </p>
         </div>
       </CardContent>
