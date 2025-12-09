@@ -3,12 +3,14 @@ import { supabase } from '@/db/supabase';
 import { notificationApi } from '@/db/api';
 import type { Notification } from '@/types/types';
 import { useToast } from '@/hooks/use-toast';
+import { useNotificationSound } from '@/hooks/use-notification-sound';
 
 export function useNotifications(userId: string | null) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { playNotificationSound } = useNotificationSound();
 
   const loadNotifications = useCallback(async () => {
     if (!userId) {
@@ -91,6 +93,8 @@ export function useNotifications(userId: string | null) {
           const newNotification = payload.new as Notification;
           setNotifications((prev) => [newNotification, ...prev]);
           setUnreadCount((prev) => prev + 1);
+
+          playNotificationSound();
 
           toast({
             title: newNotification.title,

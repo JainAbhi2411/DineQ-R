@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { NotificationList } from './NotificationList';
+import { NotificationSettings } from './NotificationSettings';
 import { useNotifications } from '@/hooks/use-notifications';
 
 interface NotificationBellProps {
@@ -18,28 +19,31 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     useNotifications(userId);
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-            >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="end">
-        <NotificationList
-          notifications={notifications}
-          onMarkAsRead={markAsRead}
-          onMarkAllAsRead={markAllAsRead}
-          onDelete={deleteNotification}
-        />
-      </PopoverContent>
-    </Popover>
+    <div className="flex items-center gap-1">
+      <NotificationSettings />
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Badge>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-96 p-0" align="end">
+          <NotificationList
+            notifications={notifications}
+            onMarkAsRead={markAsRead}
+            onMarkAllAsRead={markAllAsRead}
+            onDelete={deleteNotification}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
