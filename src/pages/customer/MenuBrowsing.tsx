@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { restaurantApi, menuCategoryApi, menuItemApi, tableApi, orderApi, promotionApi } from '@/db/api';
 import { Restaurant, MenuCategory, MenuItem, ItemType, RestaurantType, MenuItemVariant, CartItem, OrderWithItems, PromotionValidation, Promotion } from '@/types/types';
+import { llmService, ParsedOrderItem } from '@/services/llm.service';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,7 @@ import OffersModal from '@/components/customer/OffersModal';
 import OffersBanner from '@/components/customer/OffersBanner';
 import PromoCodeInput from '@/components/customer/PromoCodeInput';
 import OrderChatBot from '@/components/customer/OrderChatBot';
+import VoiceOrderButton from '@/components/customer/VoiceOrderButton';
 import { supabase } from '@/db/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -595,6 +597,98 @@ export default function MenuBrowsing() {
     }
   };
 
+  const handleVoiceTranscription = async (transcribedText: string) => {
+    console.log('Voice transcription received:', transcribedText);
+    
+    toast({
+      title: 'Processing Voice Order',
+      description: `You said: "${transcribedText}"`,
+    });
+
+    const availableItems = menuItems
+      .filter((item) => item.is_available)
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+      }));
+
+    try {
+      await llmService.parseOrderFromNaturalLanguage(
+        transcribedText,
+        availableItems,
+        [],
+        () => {}, // No streaming needed for voice orders
+        (fullText, parsedItems) => {
+          console.log('Parsed items from voice:', parsedItems);
+          
+          if (!parsedItems || parsedItems.length === 0) {
+            toast({
+              title: 'No Items Found',
+              description: 'Could not identify any menu items from your voice order. Please try again.',
+              variant: 'destructive',
+            });
+            return;
+          }
+
+          let addedCount = 0;
+          const notFoundItems: string[] = [];
+
+          parsedItems.forEach((parsedItem: ParsedOrderItem) => {
+            const menuItem = menuItems.find(
+              (item) =>
+                item.name.toLowerCase() === parsedItem.itemName.toLowerCase() &&
+                item.is_available
+            );
+
+            if (menuItem) {
+              handleChatBotAddToCart(menuItem.id, parsedItem.quantity);
+              addedCount++;
+            } else {
+              notFoundItems.push(parsedItem.itemName);
+            }
+          });
+
+          if (addedCount > 0) {
+            toast({
+              title: 'Items Added to Cart',
+              description: `Successfully added ${addedCount} item(s) from your voice order`,
+            });
+            
+            if (notFoundItems.length > 0) {
+              toast({
+                title: 'Some Items Not Found',
+                description: `Could not find: ${notFoundItems.join(', ')}`,
+                variant: 'destructive',
+              });
+            }
+          } else {
+            toast({
+              title: 'No Items Added',
+              description: 'Could not find any matching items in the menu',
+              variant: 'destructive',
+            });
+          }
+        },
+        (error) => {
+          console.error('Voice order processing error:', error);
+          toast({
+            title: 'Processing Failed',
+            description: 'Failed to process your voice order. Please try again.',
+            variant: 'destructive',
+          });
+        }
+      );
+    } catch (error) {
+      console.error('Error processing voice order:', error);
+      toast({
+        title: 'Error',
+        description: 'An error occurred while processing your voice order',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleCheckout = async () => {
     if (cart.length === 0) return;
     
@@ -884,26 +978,32 @@ export default function MenuBrowsing() {
       {/* Search and Filters */}
       <div className="sticky top-[120px] xl:top-[140px] z-30 bg-background border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-3 xl:px-6 py-3">
-          {/* Search Bar */}
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search for dishes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-10 h-10 text-sm"
+          {/* Search Bar with Voice Button */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search for dishes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-10 h-10 text-sm"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+            <VoiceOrderButton
+              onTranscriptionComplete={handleVoiceTranscription}
+              disabled={loading || menuItems.length === 0}
             />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
           </div>
 
           {/* Offers Banner */}
