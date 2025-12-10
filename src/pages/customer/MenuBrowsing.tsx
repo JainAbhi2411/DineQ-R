@@ -1,13 +1,12 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { restaurantApi, menuCategoryApi, menuItemApi, tableApi, orderApi, promotionApi } from '@/db/api';
-import { Restaurant, MenuCategory, MenuItem, ItemType, RestaurantType, MenuItemVariant, CartItem, OrderWithItems, PromotionValidation, Promotion } from '@/types/types';
+import { Restaurant, MenuCategory, MenuItem, ItemType, RestaurantType, MenuItemVariant, OrderWithItems, PromotionValidation, Promotion } from '@/types/types';
 import { llmService, ParsedOrderItem } from '@/services/llm.service';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -44,10 +43,7 @@ import OrderChatBot from '@/components/customer/OrderChatBot';
 import VoiceOrderButton from '@/components/customer/VoiceOrderButton';
 import { supabase } from '@/db/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface ExtendedCartItem extends CartItem {
-  id: string;
-}
+import { useCart } from '@/contexts/CartContext';
 
 export default function MenuBrowsing() {
   const { restaurantId } = useParams();
@@ -56,6 +52,7 @@ export default function MenuBrowsing() {
   const { toast } = useToast();
   const { formatCurrency } = useFormatters();
   const { user } = useAuth();
+  const { cart, addToCart: addToCartContext, updateCartItemQuantity, removeFromCart, getItemPrice, setCartOpen, clearCart } = useCart();
   const tableId = searchParams.get('table');
   
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -66,8 +63,6 @@ export default function MenuBrowsing() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedItemType, setSelectedItemType] = useState<ItemType | 'all'>('all');
-  const [cart, setCart] = useState<ExtendedCartItem[]>([]);
-  const [cartOpen, setCartOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [itemDetailDialogOpen, setItemDetailDialogOpen] = useState(false);
@@ -407,6 +402,8 @@ export default function MenuBrowsing() {
   }, {} as { [key: string]: { category: MenuCategory; items: MenuItem[] } });
 
   const handleAddToCart = (item: MenuItem, variant?: MenuItemVariant, portionSize?: 'full' | 'half') => {
+    if (!restaurantId || !restaurant) return;
+
     // Show dialog if item has variants or portions and none selected
     if ((item.variants && item.variants.length > 0 && !variant) || (item.has_portions && !portionSize)) {
       setSelectedItem(item);
@@ -420,44 +417,19 @@ export default function MenuBrowsing() {
 
     const finalPortionSize = portionSize || 'full';
     
-    // Check if item already exists in cart (same menu item, variant, and portion size)
-    const existingItemIndex = cart.findIndex(cartItem => 
-      cartItem.menu_item.id === item.id &&
-      cartItem.selectedVariant?.name === variant?.name &&
-      cartItem.portionSize === (item.has_portions ? finalPortionSize : undefined)
+    // Add to cart using context
+    addToCartContext(
+      item,
+      restaurantId,
+      restaurant.name,
+      variant,
+      item.has_portions ? finalPortionSize : undefined
     );
-
-    if (existingItemIndex !== -1) {
-      // Item exists, increment quantity
-      setCart(prevCart => {
-        const newCart = [...prevCart];
-        newCart[existingItemIndex] = {
-          ...newCart[existingItemIndex],
-          quantity: newCart[existingItemIndex].quantity + 1
-        };
-        return newCart;
-      });
-      
-      toast({
-        title: 'Quantity Updated',
-        description: `${item.name} quantity increased to ${cart[existingItemIndex].quantity + 1}`,
-      });
-    } else {
-      // Item doesn't exist, add new entry
-      const cartItem: ExtendedCartItem = {
-        id: `${item.id}-${variant?.name || 'default'}-${finalPortionSize}-${Date.now()}`,
-        menu_item: item,
-        quantity: 1,
-        selectedVariant: variant,
-        portionSize: item.has_portions ? finalPortionSize : undefined,
-      };
-
-      setCart([...cart, cartItem]);
-      toast({
-        title: 'Added to Cart',
-        description: `${item.name} ${variant ? `(${variant.name})` : ''} ${item.has_portions ? `(${finalPortionSize === 'half' ? 'Half' : 'Full'})` : ''} added to cart`,
-      });
-    }
+    
+    toast({
+      title: 'Added to Cart',
+      description: `${item.name} ${variant ? `(${variant.name})` : ''} ${item.has_portions ? `(${finalPortionSize === 'half' ? 'Half' : 'Full'})` : ''} added to cart`,
+    });
   };
 
   const handleConfirmAddToCart = () => {
@@ -469,40 +441,10 @@ export default function MenuBrowsing() {
     setSelectedPortionSize('full');
   };
 
-  const updateCartItemQuantity = (cartItemId: string, delta: number) => {
-    setCart(prevCart => {
-      const newCart = prevCart.map(item => {
-        if (item.id === cartItemId) {
-          const newQuantity = item.quantity + delta;
-          if (newQuantity <= 0) return null;
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      }).filter(Boolean) as ExtendedCartItem[];
-      return newCart;
-    });
-  };
-
-  const removeFromCart = (cartItemId: string) => {
-    setCart(cart.filter(item => item.id !== cartItemId));
-  };
-
   const getCartItemCount = (menuItemId: string, variantName?: string) => {
     return cart
       .filter(item => item.menu_item.id === menuItemId && item.selectedVariant?.name === variantName)
       .reduce((sum, item) => sum + item.quantity, 0);
-  };
-
-  const getItemPrice = (item: MenuItem, variant?: MenuItemVariant, portionSize?: string) => {
-    // If item has portions and a portion size is specified, find the variant price
-    if (item.has_portions && portionSize && item.variants) {
-      const portionVariant = item.variants.find(v => v.name.toLowerCase() === portionSize.toLowerCase());
-      if (portionVariant) {
-        return portionVariant.price;
-      }
-    }
-    // Otherwise use variant price or base price
-    return variant?.price || item.price;
   };
 
   const cartSubtotal = cart.reduce((sum, item) => {
@@ -551,50 +493,23 @@ export default function MenuBrowsing() {
   };
 
   const handleChatBotAddToCart = (itemId: string, quantity: number) => {
+    if (!restaurantId || !restaurant) return;
+    
     const item = menuItems.find(mi => mi.id === itemId);
     if (!item) {
       console.error('Item not found:', itemId);
       return;
     }
 
-    // Check if item already exists in cart (without variants/portions for chatbot orders)
-    const existingItemIndex = cart.findIndex(cartItem => 
-      cartItem.menu_item.id === item.id &&
-      !cartItem.selectedVariant &&
-      !cartItem.portionSize
-    );
-
-    if (existingItemIndex !== -1) {
-      // Item exists, increment quantity by the specified amount
-      setCart(prevCart => {
-        const newCart = [...prevCart];
-        newCart[existingItemIndex] = {
-          ...newCart[existingItemIndex],
-          quantity: newCart[existingItemIndex].quantity + quantity
-        };
-        return newCart;
-      });
-      
-      toast({
-        title: 'Quantity Updated',
-        description: `${item.name} quantity increased by ${quantity}`,
-      });
-    } else {
-      // Item doesn't exist, add new entry with specified quantity
-      const cartItem: ExtendedCartItem = {
-        id: `${item.id}-chatbot-${Date.now()}`,
-        menu_item: item,
-        quantity: quantity,
-        selectedVariant: undefined,
-        portionSize: undefined,
-      };
-
-      setCart([...cart, cartItem]);
-      toast({
-        title: 'Added to Cart',
-        description: `${quantity}x ${item.name} added to cart`,
-      });
+    // Add to cart using context (chatbot orders don't have variants/portions)
+    for (let i = 0; i < quantity; i++) {
+      addToCartContext(item, restaurantId, restaurant.name);
     }
+    
+    toast({
+      title: 'Added to Cart',
+      description: `${quantity}x ${item.name} added to cart`,
+    });
   };
 
   const handleVoiceTranscription = async (
@@ -808,7 +723,7 @@ export default function MenuBrowsing() {
       });
 
       // Clear cart and close dialogs
-      setCart([]);
+      clearCart();
       setAddToExistingDialogOpen(false);
       setCartOpen(false);
 
@@ -1454,164 +1369,6 @@ export default function MenuBrowsing() {
           </div>
         )}
       </div>
-
-      {/* Floating Cart Button */}
-      {cartItemCount > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md animate-slide-up">
-          <Button
-            onClick={() => setCartOpen(true)}
-            size="lg"
-            className="w-full h-14 text-base font-bold shadow-2xl"
-          >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            View Cart ({cartItemCount} {cartItemCount === 1 ? 'item' : 'items'})
-            <span className="ml-auto">{formatCurrency(cartTotal)}</span>
-            <ChevronRight className="w-5 h-5 ml-2" />
-          </Button>
-        </div>
-      )}
-
-      {/* Cart Sheet */}
-      <Sheet open={cartOpen} onOpenChange={setCartOpen}>
-        <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0">
-          <SheetHeader className="p-4 xl:p-6 border-b">
-            <SheetTitle className="text-xl xl:text-2xl">Your Cart ({cartItemCount} items)</SheetTitle>
-          </SheetHeader>
-
-          <div className="flex-1 overflow-y-auto p-4 xl:p-6">
-            {cart.length === 0 ? (
-              <div className="text-center py-16">
-                <ShoppingCart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Your cart is empty</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {cart.map((cartItem) => (
-                  <Card key={cartItem.id} className="overflow-hidden">
-                    <CardContent className="p-4">
-                      <div className="flex gap-3">
-                        {/* Item Image */}
-                        {cartItem.menu_item.image_url && (
-                          <div className="w-16 h-16 xl:w-20 xl:h-20 rounded-lg overflow-hidden shrink-0">
-                            <img
-                              src={cartItem.menu_item.image_url}
-                              alt={cartItem.menu_item.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-
-                        {/* Item Details */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm xl:text-base line-clamp-1">
-                                {cartItem.menu_item.name}
-                              </h4>
-                              {cartItem.selectedVariant && (
-                                <p className="text-xs text-muted-foreground">{cartItem.selectedVariant.name}</p>
-                              )}
-                              {cartItem.portionSize && (
-                                <p className="text-xs text-muted-foreground">
-                                  {cartItem.portionSize === 'half' ? 'Half Portion' : 'Full Portion'}
-                                </p>
-                              )}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeFromCart(cartItem.id)}
-                              className="h-8 w-8 p-0 shrink-0"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-
-                          {cartItem.notes && (
-                            <p className="text-xs text-muted-foreground mb-2">
-                              Note: {cartItem.notes}
-                            </p>
-                          )}
-
-                          <div className="flex items-center justify-between">
-                            {/* Quantity Controls */}
-                            <div className="flex items-center gap-2 border rounded-lg">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => updateCartItemQuantity(cartItem.id, -1)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </Button>
-                              <span className="text-sm font-semibold min-w-[20px] text-center">
-                                {cartItem.quantity}
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => updateCartItemQuantity(cartItem.id, 1)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </Button>
-                            </div>
-
-                            {/* Price */}
-                            <p className="font-semibold text-sm xl:text-base">
-                              {formatCurrency(getItemPrice(cartItem.menu_item, cartItem.selectedVariant, cartItem.portionSize) * cartItem.quantity)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Cart Footer */}
-          {cart.length > 0 && (
-            <div className="border-t p-4 xl:p-6 bg-background space-y-4">
-              {/* Promo Code Input */}
-              {user?.id && restaurantId && (
-                <PromoCodeInput
-                  restaurantId={restaurantId}
-                  customerId={user.id}
-                  orderAmount={cartSubtotal}
-                  onPromoApplied={handlePromoApplied}
-                  onPromoRemoved={handlePromoRemoved}
-                  appliedPromo={appliedPromo}
-                />
-              )}
-
-              {/* Price Breakdown */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{formatCurrency(cartSubtotal)}</span>
-                </div>
-                {appliedPromo?.valid && (
-                  <div className="flex items-center justify-between text-sm text-green-600 dark:text-green-400">
-                    <span className="font-medium">Discount</span>
-                    <span className="font-semibold">-{formatCurrency(discountAmount)}</span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <span className="text-lg font-semibold">Total</span>
-                  <span className="text-2xl font-bold text-primary">{formatCurrency(cartTotal)}</span>
-                </div>
-              </div>
-
-              <Button onClick={handleCheckout} size="lg" className="w-full text-base font-bold">
-                Proceed to Checkout
-                <ChevronRight className="w-5 h-5 ml-2" />
-              </Button>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
 
       {/* Item Detail Dialog */}
       <Dialog open={itemDetailDialogOpen} onOpenChange={setItemDetailDialogOpen}>
