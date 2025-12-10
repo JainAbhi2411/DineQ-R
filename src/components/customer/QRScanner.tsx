@@ -39,6 +39,26 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
           return;
         }
 
+        // Check permission state first (if supported)
+        if (navigator.permissions && navigator.permissions.query) {
+          try {
+            const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
+            console.log('[QRScanner] Permission state:', permissionStatus.state);
+            
+            if (permissionStatus.state === 'denied') {
+              console.error('[QRScanner] Camera permission was previously denied');
+              setPermissionDenied(true);
+              setError('Camera permission was denied. Please enable it in your browser settings, or use the "Take Photo" option below.');
+              setShowFallback(true);
+              onScanError?.('Camera permission denied');
+              return;
+            }
+          } catch (permCheckError) {
+            console.warn('[QRScanner] Permission query not supported:', permCheckError);
+            // Continue anyway - some browsers don't support permission query
+          }
+        }
+
         // Request camera permission explicitly first
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -253,10 +273,38 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }: QRSca
                   </AlertDescription>
                 </Alert>
 
+                {permissionDenied && (
+                  <div className="bg-blue-500/10 rounded-lg p-4 mb-4 text-left border border-blue-500/20">
+                    <p className="text-white text-sm font-medium mb-3">💡 How to Fix Camera Permission:</p>
+                    
+                    {/* Mobile Instructions */}
+                    <div className="mb-3">
+                      <p className="text-white/90 text-xs font-medium mb-1">📱 On Mobile:</p>
+                      <ol className="text-white/80 text-xs space-y-1 list-decimal list-inside ml-2">
+                        <li>Tap the <strong>lock icon (🔒)</strong> or <strong>AA</strong> in address bar</li>
+                        <li>Tap <strong>"Website Settings"</strong> or <strong>"Permissions"</strong></li>
+                        <li>Find <strong>"Camera"</strong> and change to <strong>"Allow"</strong></li>
+                        <li>Refresh this page</li>
+                      </ol>
+                    </div>
+
+                    {/* Desktop Instructions */}
+                    <div>
+                      <p className="text-white/90 text-xs font-medium mb-1">🖥️ On Desktop:</p>
+                      <ol className="text-white/80 text-xs space-y-1 list-decimal list-inside ml-2">
+                        <li>Click the <strong>lock icon (🔒)</strong> in address bar</li>
+                        <li>Find <strong>"Camera"</strong> permissions</li>
+                        <li>Change to <strong>"Allow"</strong></li>
+                        <li>Refresh this page</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
+
                 {showFallback && (
                   <div className="space-y-3">
                     <div className="bg-primary/10 rounded-lg p-4 mb-4 text-left border border-primary/20">
-                      <p className="text-white text-sm font-medium mb-2">Alternative Method:</p>
+                      <p className="text-white text-sm font-medium mb-2">✨ Alternative Method:</p>
                       <p className="text-white/70 text-xs">
                         Take a photo of the QR code instead. This works on all devices without camera permissions.
                       </p>
