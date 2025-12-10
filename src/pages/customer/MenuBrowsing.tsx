@@ -597,13 +597,15 @@ export default function MenuBrowsing() {
     }
   };
 
-  const handleVoiceTranscription = async (transcribedText: string) => {
+  const handleVoiceTranscription = async (
+    transcribedText: string,
+    callbacks: {
+      onStream: (chunk: string) => void;
+      onComplete: (fullText: string, parsedItems: ParsedOrderItem[]) => void;
+      onError: (error: string) => void;
+    }
+  ) => {
     console.log('Voice transcription received:', transcribedText);
-    
-    toast({
-      title: 'Processing Voice Order',
-      description: `You said: "${transcribedText}"`,
-    });
 
     const availableItems = menuItems
       .filter((item) => item.is_available)
@@ -618,9 +620,15 @@ export default function MenuBrowsing() {
         transcribedText,
         availableItems,
         [],
-        () => {}, // No streaming needed for voice orders
+        (chunk) => {
+          // Stream the response to the voice dialog
+          callbacks.onStream(chunk);
+        },
         (fullText, parsedItems) => {
           console.log('Parsed items from voice:', parsedItems);
+          
+          // Send the full response and parsed items to the dialog
+          callbacks.onComplete(fullText, parsedItems);
           
           if (!parsedItems || parsedItems.length === 0) {
             toast({
@@ -672,6 +680,8 @@ export default function MenuBrowsing() {
         },
         (error) => {
           console.error('Voice order processing error:', error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          callbacks.onError(errorMessage);
           toast({
             title: 'Processing Failed',
             description: 'Failed to process your voice order. Please try again.',
@@ -680,10 +690,11 @@ export default function MenuBrowsing() {
         }
       );
     } catch (error) {
-      console.error('Error processing voice order:', error);
+      console.error('Error in voice transcription handler:', error);
+      callbacks.onError(error instanceof Error ? error.message : 'Unknown error');
       toast({
         title: 'Error',
-        description: 'An error occurred while processing your voice order',
+        description: 'An error occurred while processing your order',
         variant: 'destructive',
       });
     }
