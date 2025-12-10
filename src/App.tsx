@@ -2,14 +2,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { RestaurantProvider } from './contexts/RestaurantContext';
 import { SettingsProvider } from './contexts/SettingsContext';
-import { CartProvider } from './contexts/CartContext';
 import { Toaster } from './components/ui/toaster';
 import Header from './components/common/Header';
 import Chatbot from './components/common/Chatbot';
 import InstallPWA from './components/common/InstallPWA';
 import OfflineIndicator from './components/common/OfflineIndicator';
-import FloatingCartButton from './components/customer/FloatingCartButton';
-import CartSheet from './components/customer/CartSheet';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import routes from './routes';
 
@@ -61,25 +58,13 @@ function AppContent() {
   );
 }
 
-function CartComponents() {
-  return (
-    <>
-      <FloatingCartButton />
-      <CartSheet />
-    </>
-  );
-}
-
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <RestaurantProvider>
           <SettingsProvider>
-            <CartProvider>
-              <AppContent />
-              <CartComponents />
-            </CartProvider>
+            <AppContent />
           </SettingsProvider>
         </RestaurantProvider>
       </AuthProvider>
