@@ -262,7 +262,7 @@ export default function Promotions() {
     if (promotion.discount_type === 'PERCENTAGE') {
       return `${promotion.discount_value}% OFF`;
     }
-    return `$${promotion.discount_value} OFF`;
+    return `${promotion.discount_value} OFF`;
   };
 
   const getStatusBadge = (promotion: Promotion) => {
@@ -493,7 +493,7 @@ export default function Promotions() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="min_order_amount">Min. Order Amount ($)</Label>
+                  <Label htmlFor="min_order_amount">Min. Order Amount</Label>
                   <Input
                     id="min_order_amount"
                     type="number"
@@ -506,7 +506,7 @@ export default function Promotions() {
 
               {formData.discount_type === 'PERCENTAGE' && (
                 <div className="space-y-2">
-                  <Label htmlFor="max_discount">Max. Discount Cap ($)</Label>
+                  <Label htmlFor="max_discount">Max. Discount Cap</Label>
                   <Input
                     id="max_discount"
                     type="number"
@@ -646,7 +646,7 @@ export default function Promotions() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-min_order_amount">Min. Order Amount ($)</Label>
+                  <Label htmlFor="edit-min_order_amount">Min. Order Amount</Label>
                   <Input
                     id="edit-min_order_amount"
                     type="number"
@@ -658,7 +658,7 @@ export default function Promotions() {
 
               {formData.discount_type === 'PERCENTAGE' && (
                 <div className="space-y-2">
-                  <Label htmlFor="edit-max_discount">Max. Discount Cap ($)</Label>
+                  <Label htmlFor="edit-max_discount">Max. Discount Cap</Label>
                   <Input
                     id="edit-max_discount"
                     type="number"

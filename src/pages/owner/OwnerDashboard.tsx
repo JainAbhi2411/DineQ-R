@@ -256,7 +256,7 @@ export default function OwnerDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Today's Revenue</p>
-                  <p className="text-3xl font-bold gradient-text-secondary">${formatCurrency(todayRevenue)}</p>
+                  <p className="text-3xl font-bold gradient-text-secondary">{formatCurrency(todayRevenue)}</p>
                 </div>
                 <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-secondary" />
@@ -318,7 +318,7 @@ export default function OwnerDashboard() {
                         <CardTitle className="text-lg">Order #{order.id.slice(0, 8)}</CardTitle>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">${formatCurrency(order.total_amount)}</p>
+                        <p className="text-2xl font-bold text-primary">{formatCurrency(order.total_amount)}</p>
                       </div>
                     </div>
                   </CardHeader>
@@ -419,7 +419,7 @@ export default function OwnerDashboard() {
                       {item.description || 'No description available'}
                     </p>
                     <div className="flex items-center justify-between pt-2 border-t border-border">
-                      <span className="text-xl font-bold gradient-text-primary">${formatCurrency(item.price)}</span>
+                      <span className="text-xl font-bold gradient-text-primary">{formatCurrency(item.price)}</span>
                       <Badge 
                         variant={item.is_available ? 'default' : 'secondary'} 
                         className={item.is_available ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/50' : ''}

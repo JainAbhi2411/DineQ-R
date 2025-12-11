@@ -533,10 +533,10 @@ export default function Analytics() {
                             </TableCell>
                             <TableCell className="text-right">{item.order_count}</TableCell>
                             <TableCell className="text-right font-semibold">
-                              ${item.revenue.toFixed(2)}
+                              {item.revenue.toFixed(2)}
                             </TableCell>
                             <TableCell className="text-right text-muted-foreground">
-                              ${(item.revenue / item.order_count).toFixed(2)}
+                              {(item.revenue / item.order_count).toFixed(2)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -580,7 +580,7 @@ export default function Analytics() {
                           border: '1px solid hsl(var(--border))',
                           borderRadius: '8px'
                         }}
-                        formatter={(value: number) => `$${value.toFixed(2)}`}
+                        formatter={(value: number) => `${value.toFixed(2)}`}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -615,7 +615,7 @@ export default function Analytics() {
                             <TableCell className="font-medium">{item.menu_item_name}</TableCell>
                             <TableCell className="text-right">{item.order_count}</TableCell>
                             <TableCell className="text-right font-semibold">
-                              ${item.total_revenue.toFixed(2)}
+                              {item.total_revenue.toFixed(2)}
                             </TableCell>
                           </TableRow>
                         ))}
