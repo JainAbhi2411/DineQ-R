@@ -6,11 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { UtensilsCrossed, Lock, Mail, Sparkles, ChefHat, QrCode } from 'lucide-react';
-import { supabase } from '@/db/supabase';
+import { UtensilsCrossed, Lock, User, Sparkles, ChefHat, QrCode } from 'lucide-react';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
@@ -20,7 +19,7 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email.trim() || !password) {
+    if (!username.trim() || !password) {
       toast({
         title: 'Error',
         description: 'Please fill in all fields',
@@ -31,34 +30,16 @@ export default function Login() {
 
     setLoading(true);
     try {
-      await signIn(email, password);
-      
-      // Get user profile to determine role and redirect
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        toast({
-          title: 'Success',
-          description: 'Welcome back! Logged in successfully',
-        });
-
-        // Redirect based on role
-        if (profile?.role === 'owner') {
-          navigate('/owner');
-        } else {
-          navigate('/customer');
-        }
-      }
+      await signIn(username, password);
+      toast({
+        title: 'Success',
+        description: 'Welcome back! Logged in successfully',
+      });
+      navigate('/');
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to login. Please check your credentials.',
+        description: error.message || 'Failed to login',
         variant: 'destructive',
       });
     } finally {
@@ -148,15 +129,15 @@ export default function Login() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-base">Email Address</Label>
+                  <Label htmlFor="username" className="text-base">Username</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email address"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="username"
+                      type="text"
+                      placeholder="Enter your username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       disabled={loading}
                       required
                       className="pl-10 h-12 text-base"

@@ -20,7 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 
 export default function Register() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<'owner' | 'customer'>('customer');
@@ -32,7 +32,7 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email.trim() || !password || !fullName.trim()) {
+    if (!username.trim() || !password || !fullName.trim()) {
       toast({
         title: 'Error',
         description: 'Please fill in all fields',
@@ -41,12 +41,10 @@ export default function Register() {
       return;
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       toast({
         title: 'Error',
-        description: 'Please enter a valid email address',
+        description: 'Username can only contain letters, numbers, and underscores',
         variant: 'destructive',
       });
       return;
@@ -63,13 +61,12 @@ export default function Register() {
 
     setLoading(true);
     try {
-      await signUp(email, password, fullName, role);
+      await signUp(username, password, fullName, role);
       toast({
         title: 'Success',
-        description: 'Account created! Please check your email to verify your account.',
-        duration: 6000,
+        description: 'Account created successfully! Please sign in.',
       });
-      navigate('/verify-email', { state: { email } });
+      navigate('/');
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -180,21 +177,21 @@ export default function Register() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-base">Email Address</Label>
+                  <Label htmlFor="username" className="text-base">Username</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email address"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="username"
+                      type="text"
+                      placeholder="Choose a username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       disabled={loading}
                       required
                       className="pl-10 h-12 text-base"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">We'll send a verification code to this email</p>
+                  <p className="text-xs text-muted-foreground">Only letters, numbers, and underscores</p>
                 </div>
 
                 <div className="space-y-2">
