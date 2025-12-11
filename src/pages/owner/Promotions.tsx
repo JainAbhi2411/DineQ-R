@@ -262,7 +262,7 @@ export default function Promotions() {
     if (promotion.discount_type === 'PERCENTAGE') {
       return `${promotion.discount_value}% OFF`;
     }
-    return `${promotion.discount_value} OFF`;
+    return `$${promotion.discount_value} OFF`;
   };
 
   const getStatusBadge = (promotion: Promotion) => {
@@ -358,14 +358,14 @@ export default function Promotions() {
                     {promotion.min_order_amount > 0 && (
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Min. Order</span>
-                        <span className="font-medium">${promotion.min_order_amount}</span>
+                        <span className="font-medium">₹{promotion.min_order_amount}</span>
                       </div>
                     )}
 
                     {promotion.max_discount && (
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Max. Discount</span>
-                        <span className="font-medium">${promotion.max_discount}</span>
+                        <span className="font-medium">₹{promotion.max_discount}</span>
                       </div>
                     )}
 
@@ -463,7 +463,7 @@ export default function Promotions() {
                 <Label htmlFor="title">Title *</Label>
                 <Input
                   id="title"
-                  placeholder="20% Off on Orders Above $30"
+                  placeholder="20% Off on Orders Above ₹500"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
@@ -473,7 +473,7 @@ export default function Promotions() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  placeholder="Get 20% discount on all orders above $30"
+                  placeholder="Get 20% discount on all orders above ₹500"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
@@ -482,18 +482,18 @@ export default function Promotions() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="discount_value">
-                    Discount Value * {formData.discount_type === 'PERCENTAGE' ? '(%)' : '($)'}
+                    Discount Value * {formData.discount_type === 'PERCENTAGE' ? '(%)' : '(₹)'}
                   </Label>
                   <Input
                     id="discount_value"
                     type="number"
-                    placeholder={formData.discount_type === 'PERCENTAGE' ? '20' : '5'}
+                    placeholder={formData.discount_type === 'PERCENTAGE' ? '20' : '100'}
                     value={formData.discount_value}
                     onChange={(e) => setFormData({ ...formData, discount_value: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="min_order_amount">Min. Order Amount</Label>
+                  <Label htmlFor="min_order_amount">Min. Order Amount (₹)</Label>
                   <Input
                     id="min_order_amount"
                     type="number"
@@ -506,7 +506,7 @@ export default function Promotions() {
 
               {formData.discount_type === 'PERCENTAGE' && (
                 <div className="space-y-2">
-                  <Label htmlFor="max_discount">Max. Discount Cap</Label>
+                  <Label htmlFor="max_discount">Max. Discount Cap (₹)</Label>
                   <Input
                     id="max_discount"
                     type="number"
@@ -636,7 +636,7 @@ export default function Promotions() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-discount_value">
-                    Discount Value * {formData.discount_type === 'PERCENTAGE' ? '(%)' : '($)'}
+                    Discount Value * {formData.discount_type === 'PERCENTAGE' ? '(%)' : '(₹)'}
                   </Label>
                   <Input
                     id="edit-discount_value"
@@ -646,7 +646,7 @@ export default function Promotions() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-min_order_amount">Min. Order Amount</Label>
+                  <Label htmlFor="edit-min_order_amount">Min. Order Amount (₹)</Label>
                   <Input
                     id="edit-min_order_amount"
                     type="number"
@@ -658,7 +658,7 @@ export default function Promotions() {
 
               {formData.discount_type === 'PERCENTAGE' && (
                 <div className="space-y-2">
-                  <Label htmlFor="edit-max_discount">Max. Discount Cap</Label>
+                  <Label htmlFor="edit-max_discount">Max. Discount Cap (₹)</Label>
                   <Input
                     id="edit-max_discount"
                     type="number"

@@ -248,7 +248,7 @@ export default function EnhancedMenuItemForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="price">Base Price * ($)</Label>
+                  <Label htmlFor="price">Base Price * (₹)</Label>
                   <Input
                     id="price"
                     type="number"
@@ -443,7 +443,7 @@ export default function EnhancedMenuItemForm({
                       <div key={index} className="flex items-center justify-between p-2 border rounded">
                         <div>
                           <span className="font-medium">{variant.name}</span>
-                          <span className="text-muted-foreground ml-2">${formatCurrency(variant.price)}</span>
+                          <span className="text-muted-foreground ml-2">{formatCurrency(variant.price)}</span>
                         </div>
                         <Button
                           type="button"

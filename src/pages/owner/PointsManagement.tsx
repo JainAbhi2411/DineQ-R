@@ -267,7 +267,7 @@ export default function PointsManagement() {
                   {reward.min_order_value > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Min. Order:</span>
-                      <span className="font-medium">${reward.min_order_value}</span>
+                      <span className="font-medium">₹{Math.round(reward.min_order_value)}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between">

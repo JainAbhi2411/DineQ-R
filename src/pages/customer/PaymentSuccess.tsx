@@ -113,7 +113,7 @@ export default function PaymentSuccess() {
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Amount Paid</span>
                 <span className="font-semibold">
-                  ${(paymentDetails.amount / 100).toFixed(2)} {paymentDetails.currency?.toUpperCase()}
+                  ₹{Math.round(paymentDetails.amount / 100)} {paymentDetails.currency?.toUpperCase()}
                 </span>
               </div>
             )}

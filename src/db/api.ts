@@ -392,7 +392,7 @@ export const orderApi = {
       .from('orders')
       .insert({
         ...order,
-        currency: 'USD',
+        currency: 'INR',
       })
       .select()
       .single();
@@ -954,8 +954,8 @@ export const settingsApi = {
       .from('restaurant_settings')
       .insert({
         restaurant_id: restaurantId,
-        timezone: 'America/New_York',
-        currency: 'USD',
+        timezone: 'Asia/Kolkata',
+        currency: 'INR',
         auto_accept_orders: false,
         online_ordering: true,
         email_notifications: true,

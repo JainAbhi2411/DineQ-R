@@ -595,7 +595,7 @@ export default function MenuBrowsing() {
           setAppliedPromo(validation);
           toast({
             title: 'Success!',
-            description: `Promo code applied! You saved $${validation.discount_amount.toFixed(2)}`,
+            description: `Promo code applied! You saved ₹${Math.round(validation.discount_amount)}`,
           });
         } else {
           toast({

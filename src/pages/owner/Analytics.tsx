@@ -67,7 +67,7 @@ const generateRecommendations = (analytics: AnalyticsData) => {
       type: 'revenue',
       priority: 'high',
       title: 'Increase Average Order Value',
-      description: `Your average order value is $${avgOrderValue.toFixed(2)}. Consider adding combo meals or suggesting add-ons to increase this metric.`,
+      description: `Your average order value is ₹${Math.round(avgOrderValue)}. Consider adding combo meals or suggesting add-ons to increase this metric.`,
       action: 'Create bundle offers',
       icon: Target,
     });
@@ -239,7 +239,7 @@ export default function Analytics() {
       icon: DollarSign,
       color: 'text-green-500',
       bgColor: 'bg-green-500/10',
-      prefix: '$'
+      prefix: '₹'
     },
     {
       title: 'Total Orders',
@@ -413,7 +413,7 @@ export default function Analytics() {
                         stroke="#FF6B35" 
                         fillOpacity={1} 
                         fill="url(#colorRevenue)" 
-                        name="Revenue ($)"
+                        name="Revenue (₹)"
                       />
                       <Area 
                         type="monotone" 
@@ -440,7 +440,7 @@ export default function Analytics() {
                       <span className="text-sm text-muted-foreground">Average Order Value</span>
                       <DollarSign className="w-4 h-4 text-green-500" />
                     </div>
-                    <p className="text-2xl font-bold">${avgOrderValue.toFixed(2)}</p>
+                    <p className="text-2xl font-bold">₹{Math.round(avgOrderValue)}</p>
                     <p className="text-xs text-muted-foreground mt-1">Per order</p>
                   </div>
 
@@ -498,7 +498,7 @@ export default function Analytics() {
                         }}
                       />
                       <Legend />
-                      <Bar dataKey="revenue" fill="#FF6B35" name="Revenue ($)" radius={[8, 8, 0, 0]} />
+                      <Bar dataKey="revenue" fill="#FF6B35" name="Revenue (₹)" radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -533,10 +533,10 @@ export default function Analytics() {
                             </TableCell>
                             <TableCell className="text-right">{item.order_count}</TableCell>
                             <TableCell className="text-right font-semibold">
-                              {item.revenue.toFixed(2)}
+                              ₹{Math.round(item.revenue)}
                             </TableCell>
                             <TableCell className="text-right text-muted-foreground">
-                              {(item.revenue / item.order_count).toFixed(2)}
+                              ₹{Math.round(item.revenue / item.order_count)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -580,7 +580,7 @@ export default function Analytics() {
                           border: '1px solid hsl(var(--border))',
                           borderRadius: '8px'
                         }}
-                        formatter={(value: number) => `${value.toFixed(2)}`}
+                        formatter={(value: number) => `₹${Math.round(value)}`}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -615,7 +615,7 @@ export default function Analytics() {
                             <TableCell className="font-medium">{item.menu_item_name}</TableCell>
                             <TableCell className="text-right">{item.order_count}</TableCell>
                             <TableCell className="text-right font-semibold">
-                              {item.total_revenue.toFixed(2)}
+                              ₹{Math.round(item.total_revenue)}
                             </TableCell>
                           </TableRow>
                         ))}

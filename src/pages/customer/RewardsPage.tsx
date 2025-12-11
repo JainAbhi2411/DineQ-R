@@ -192,13 +192,13 @@ export default function RewardsPage() {
                       {reward.min_order_value > 0 && (
                         <div className="flex items-center gap-2">
                           <ShoppingBag className="w-4 h-4" />
-                          <span>Min. order: ${reward.min_order_value}</span>
+                          <span>Min. order: ₹{reward.min_order_value}</span>
                         </div>
                       )}
                       {reward.max_discount && (
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-4 h-4" />
-                          <span>Max. discount: ${reward.max_discount}</span>
+                          <span>Max. discount: ₹{reward.max_discount}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-2">
@@ -218,7 +218,7 @@ export default function RewardsPage() {
                     <Button
                       className="w-full"
                       onClick={() => handleRedeemReward(reward)}
-                      disabled={!canAfford || reachedLimit || redeeming}
+                      disabled={!canAfford || reachedLimit || loading}
                     >
                       {reachedLimit
                         ? 'Usage Limit Reached'
@@ -398,19 +398,19 @@ export default function RewardsPage() {
                     <span className="font-medium">
                       {redeemResult.discount_type === 'percentage'
                         ? `${redeemResult.discount_value}% OFF`
-                        : `$${redeemResult.discount_value} OFF`}
+                        : `₹${redeemResult.discount_value} OFF`}
                     </span>
                   </div>
                   {redeemResult.min_order_value > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Minimum Order:</span>
-                      <span className="font-medium">${redeemResult.min_order_value}</span>
+                      <span className="font-medium">₹{redeemResult.min_order_value}</span>
                     </div>
                   )}
                   {redeemResult.max_discount && (
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Maximum Discount:</span>
-                      <span className="font-medium">${redeemResult.max_discount}</span>
+                      <span className="font-medium">₹{redeemResult.max_discount}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between">

@@ -151,7 +151,7 @@ export default function OffersModal({
                       </div>
                     ) : (
                       <div className="text-center">
-                        <div className="text-xl font-bold text-primary">${promotion.discount_value}</div>
+                        <div className="text-xl font-bold text-primary">₹{Math.round(promotion.discount_value)}</div>
                         <div className="text-[10px] text-primary/70">OFF</div>
                       </div>
                     )}

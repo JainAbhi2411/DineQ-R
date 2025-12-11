@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useFormatters } from '@/hooks/useFormatters';
-import { Plus, Edit, Trash2, ArrowLeft, Save, Star, Clock, Flame, Eye, ChevronDown, ChevronUp, Leaf } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowLeft, Save, Star, Clock, Flame, Eye, ChevronDown, ChevronUp, Leaf, ChefHat } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -341,17 +341,21 @@ export default function MenuManagement() {
                       <div className="grid grid-cols-1 gap-3 xl:gap-4 xl:grid-cols-2 2xl:grid-cols-3">
                         {categoryItems.map((item) => (
                           <Card key={item.id} className="overflow-hidden">
-                            {item.image_url && (
-                              <div className="h-32 xl:h-48 overflow-hidden relative">
+                            <div className="h-32 xl:h-48 overflow-hidden relative">
+                              {item.image_url ? (
                                 <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-                                {item.is_bestseller && (
-                                  <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-full flex items-center gap-1 text-xs font-semibold">
-                                    <Star className="w-3 h-3 fill-current" />
-                                    Bestseller
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                              ) : (
+                                <div className="w-full h-full bg-muted flex items-center justify-center">
+                                  <ChefHat className="w-12 h-12 xl:w-16 xl:h-16 text-muted-foreground" />
+                                </div>
+                              )}
+                              {item.is_bestseller && (
+                                <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-full flex items-center gap-1 text-xs font-semibold">
+                                  <Star className="w-3 h-3 fill-current" />
+                                  Bestseller
+                                </div>
+                              )}
+                            </div>
                             <CardHeader className="p-3 xl:p-6">
                               <div className="flex justify-between items-start gap-2">
                                 <div className="flex items-start gap-2 flex-1">
@@ -359,7 +363,7 @@ export default function MenuManagement() {
                                   <CardTitle className="text-base xl:text-lg">{item.name}</CardTitle>
                                 </div>
                                 <span className="text-base xl:text-lg font-bold text-primary whitespace-nowrap">
-                                  ${formatCurrency(item.price)}
+                                  {formatCurrency(item.price)}
                                 </span>
                               </div>
                               
@@ -565,15 +569,19 @@ export default function MenuManagement() {
                                     </div>
 
                                     {/* Item Image (if available) */}
-                                    {item.image_url && (
-                                      <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden">
+                                    <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden">
+                                      {item.image_url ? (
                                         <img 
                                           src={item.image_url} 
                                           alt={item.name}
                                           className="w-full h-full object-cover"
                                         />
-                                      </div>
-                                    )}
+                                      ) : (
+                                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                                          <ChefHat className="w-8 h-8 text-muted-foreground" />
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
 
                                   {/* Price */}

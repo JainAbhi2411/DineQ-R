@@ -1,63 +1,29 @@
 import { format as dateFnsFormat, toZonedTime } from 'date-fns-tz';
 
-// Currency symbols mapping
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  JPY: '¥',
-  CNY: '¥',
-  AUD: '$',
-  CAD: '$',
-  CHF: 'Fr',
-  INR: '₹',
-  AED: 'د.إ',
-};
-
-// Currency locale mapping for proper formatting
-const CURRENCY_LOCALES: Record<string, string> = {
-  USD: 'en-US',
-  EUR: 'de-DE',
-  GBP: 'en-GB',
-  JPY: 'ja-JP',
-  CNY: 'zh-CN',
-  AUD: 'en-AU',
-  CAD: 'en-CA',
-  CHF: 'de-CH',
-  INR: 'en-IN',
-  AED: 'ar-AE',
-};
-
 /**
- * Format a price with the specified currency
+ * Format a price in INR (Indian Rupees)
  * @param amount - The amount to format
- * @param currency - The currency code (e.g., 'USD', 'EUR')
- * @returns Formatted price string
+ * @returns Formatted price string in INR (whole numbers, no decimals)
  */
-export function formatCurrency(amount: number, currency: string = 'USD'): string {
-  const locale = CURRENCY_LOCALES[currency] || 'en-US';
-  
+export function formatCurrency(amount: number): string {
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(Math.round(amount));
   } catch (error) {
-    // Fallback to simple formatting if currency is not supported
-    const symbol = CURRENCY_SYMBOLS[currency] || currency;
-    return `${symbol}${amount.toFixed(2)}`;
+    return `₹${Math.round(amount)}`;
   }
 }
 
 /**
- * Get currency symbol for a given currency code
- * @param currency - The currency code
- * @returns Currency symbol
+ * Get currency symbol (always INR)
+ * @returns Currency symbol for INR
  */
-export function getCurrencySymbol(currency: string = 'USD'): string {
-  return CURRENCY_SYMBOLS[currency] || currency;
+export function getCurrencySymbol(): string {
+  return '₹';
 }
 
 /**

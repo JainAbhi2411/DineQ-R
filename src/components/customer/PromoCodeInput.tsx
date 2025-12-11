@@ -54,7 +54,7 @@ export default function PromoCodeInput({
         onPromoApplied(validation);
         toast({
           title: 'Success!',
-          description: `Promo code applied! You saved $${validation.discount_amount.toFixed(2)}`,
+          description: `Promo code applied! You saved ₹${Math.round(validation.discount_amount)}`,
         });
         setPromoCode('');
       } else {
@@ -100,7 +100,7 @@ export default function PromoCodeInput({
                 Promo Applied!
               </p>
               <p className="text-sm text-green-700 dark:text-green-300">
-                You saved ${appliedPromo.discount_amount.toFixed(2)}
+                You saved ₹{Math.round(appliedPromo.discount_amount)}
               </p>
             </div>
           </div>

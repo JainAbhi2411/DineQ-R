@@ -178,7 +178,7 @@ export default function Checkout() {
             table_id: tableId || null,
             items: items,
             special_instructions: specialInstructions || null,
-            currency: 'usd',
+            currency: 'inr',
             promotion_id: appliedPromo?.valid ? appliedPromo.promotion_id : null,
             discount_amount: appliedPromo?.valid ? appliedPromo.discount_amount : 0,
             promo_code: appliedPromo?.valid ? appliedPromo.code : null,

@@ -7,14 +7,13 @@ import { formatCurrency as baseCurrency, formatDateTime as baseDateTime, formatD
 export function useFormatters() {
   const { settings } = useSettings();
   
-  const currency = settings?.currency || 'USD';
   const timezone = settings?.timezone || 'America/New_York';
 
   return {
     /**
-     * Format a price with the restaurant's currency
+     * Format a price in INR
      */
-    formatCurrency: (amount: number) => baseCurrency(amount, currency),
+    formatCurrency: (amount: number) => baseCurrency(amount),
     
     /**
      * Format a date/time in the restaurant's timezone
@@ -36,11 +35,6 @@ export function useFormatters() {
      * Format a relative time (e.g., "2 hours ago")
      */
     formatRelativeTime,
-    
-    /**
-     * Get the current currency code
-     */
-    currency,
     
     /**
      * Get the current timezone

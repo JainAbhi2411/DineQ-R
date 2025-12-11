@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     const username = email.includes('@') ? email.split('@')[0] : email;
-    const fullEmail = `${username}@miaoda.com`;
+    const fullEmail = `${username}@gmail.com`;
     
     const { error } = await supabase.auth.signInWithPassword({
       email: fullEmail,
@@ -75,7 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string, role: 'owner' | 'customer') => {
     const username = email.includes('@') ? email.split('@')[0] : email;
-    const fullEmail = `${username}@miaoda.com`;
+    const fullEmail = `${username}@gmail.com`;
+    
     
     const { data, error } = await supabase.auth.signUp({
       email: fullEmail,

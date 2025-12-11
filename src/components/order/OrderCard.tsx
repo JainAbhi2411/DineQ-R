@@ -156,11 +156,36 @@ export default function OrderCard({ order, onPrint, showCustomerInfo = false, ac
                 </div>
               )}
             </div>
-            <div className="flex justify-between items-center mt-4 pt-4 border-t">
-              <span className="font-semibold text-lg">Total</span>
-              <span className="font-bold text-xl text-primary">
-                ${formatCurrency(order.total_amount)}
-              </span>
+            
+            {/* Pricing Summary */}
+            <div className="mt-4 pt-4 border-t space-y-2">
+              {order.discount_amount && order.discount_amount > 0 ? (
+                <>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>{formatCurrency(order.total_amount + order.discount_amount)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-green-600 flex items-center gap-1">
+                      Discount {order.promo_code && `(${order.promo_code})`}
+                    </span>
+                    <span className="text-green-600">-{formatCurrency(order.discount_amount)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="font-semibold text-lg">Total</span>
+                    <span className="font-bold text-xl text-primary">
+                      {formatCurrency(order.total_amount)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-lg">Total</span>
+                  <span className="font-bold text-xl text-primary">
+                    {formatCurrency(order.total_amount)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

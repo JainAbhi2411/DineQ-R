@@ -60,15 +60,15 @@ function AppContent() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
+    <AuthProvider>
+      <BrowserRouter>
         <RestaurantProvider>
           <SettingsProvider>
             <AppContent />
           </SettingsProvider>
         </RestaurantProvider>
-      </AuthProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

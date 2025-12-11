@@ -178,15 +178,12 @@ export default function Settings() {
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="USD">USD - US Dollar ($)</SelectItem>
+                    <SelectItem value="INR">INR - Indian Rupee (₹)</SelectItem>
                     <SelectItem value="EUR">EUR - Euro (€)</SelectItem>
                     <SelectItem value="GBP">GBP - British Pound (£)</SelectItem>
                     <SelectItem value="JPY">JPY - Japanese Yen (¥)</SelectItem>
                     <SelectItem value="CNY">CNY - Chinese Yuan (¥)</SelectItem>
-                    <SelectItem value="AUD">AUD - Australian Dollar ($)</SelectItem>
-                    <SelectItem value="CAD">CAD - Canadian Dollar ($)</SelectItem>
                     <SelectItem value="CHF">CHF - Swiss Franc (Fr)</SelectItem>
-                    <SelectItem value="INR">INR - Indian Rupee (₹)</SelectItem>
                     <SelectItem value="AED">AED - UAE Dirham (د.إ)</SelectItem>
                   </SelectContent>
                 </Select>
