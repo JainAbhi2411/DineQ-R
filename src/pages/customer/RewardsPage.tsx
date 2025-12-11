@@ -218,7 +218,7 @@ export default function RewardsPage() {
                     <Button
                       className="w-full"
                       onClick={() => handleRedeemReward(reward)}
-                      disabled={!canAfford || (reachedLimit as boolean ?? undefined)}
+                      disabled={!canAfford || reachedLimit || redeeming}
                     >
                       {reachedLimit
                         ? 'Usage Limit Reached'

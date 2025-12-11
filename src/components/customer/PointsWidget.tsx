@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Coins, Trophy, TrendingUp, Gift, Target } from 'lucide-react';
+import { Coins, Trophy, TrendingUp, Gift } from 'lucide-react';
 import { pointsApi } from '@/db/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CustomerPoints } from '@/types/types';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/db/supabase';
 
 const tierConfig = {
   bronze: {
@@ -44,29 +43,6 @@ export default function PointsWidget() {
   useEffect(() => {
     if (user?.id) {
       loadPoints();
-
-      // Set up real-time subscription for points updates
-      const channel = supabase
-        .channel('customer_points_changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'customer_points',
-            filter: `customer_id=eq.${user.id}`,
-          },
-          (payload) => {
-            console.log('[PointsWidget] Real-time update:', payload);
-            // Reload points when they change
-            loadPoints();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
     }
   }, [user?.id]);
 
@@ -155,15 +131,6 @@ export default function PointsWidget() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => navigate('/customer/weekly-tasks')}
-            className="flex-1 bg-white/20 hover:bg-white/30 text-white border-0"
-          >
-            <Target className="w-4 h-4 mr-1" />
-            Tasks
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
             onClick={() => navigate('/customer/points-history')}
             className="flex-1 bg-white/20 hover:bg-white/30 text-white border-0"
           >
@@ -176,7 +143,7 @@ export default function PointsWidget() {
             onClick={() => navigate('/customer/rewards')}
             className="flex-1 bg-white text-primary hover:bg-white/90"
           >
-            Redeem
+            Redeem Points
           </Button>
         </div>
       </CardContent>

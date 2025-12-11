@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/db/supabase';
 import { Profile } from '@/types/types';
-import { profileApi, weeklyTasksApi } from '@/db/api';
+import { profileApi } from '@/db/api';
 
 interface AuthContextType {
   user: User | null;
@@ -26,36 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const profileData = await profileApi.getCurrentProfile();
       setProfile(profileData);
-      
-      // Track daily login for customers
-      if (profileData?.role === 'customer') {
-        trackDailyLogin(userId);
-      }
     } catch (error) {
       console.error('Error loading profile:', error);
-    }
-  };
-
-  const trackDailyLogin = async (userId: string) => {
-    try {
-      const lastLoginKey = `last_login_tracked_${userId}`;
-      const lastLogin = localStorage.getItem(lastLoginKey);
-      const today = new Date().toDateString();
-
-      if (lastLogin === today) {
-        return; // Already tracked today
-      }
-
-      await weeklyTasksApi.incrementTaskProgress(
-        userId,
-        'login_days',
-        1
-      );
-
-      localStorage.setItem(lastLoginKey, today);
-      console.log('[AuthContext] Daily login tracked');
-    } catch (error) {
-      console.error('[AuthContext] Error tracking login:', error);
     }
   };
 

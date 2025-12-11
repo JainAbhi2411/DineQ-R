@@ -13,9 +13,7 @@ import {
   BarChart3,
   Settings,
   MessageSquare,
-  Tag,
-  Trophy,
-  Target
+  Tag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRestaurant } from '@/contexts/RestaurantContext';
@@ -93,18 +91,6 @@ export default function OwnerSidebar({
       icon: Tag,
       href: restaurantId ? `/owner/promotions/${restaurantId}` : '#',
       requiresRestaurant: true,
-    },
-    {
-      title: 'Points Management',
-      icon: Trophy,
-      href: '/owner/points-management',
-      requiresRestaurant: false,
-    },
-    {
-      title: 'Weekly Tasks',
-      icon: Target,
-      href: '/owner/weekly-tasks',
-      requiresRestaurant: false,
     },
     {
       title: 'Settings',
