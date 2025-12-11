@@ -93,6 +93,8 @@ export default function Checkout() {
         const orderData = {
           restaurant_id: restaurantId,
           customer_id: profile?.id || null,
+          customer_name: profile?.full_name || profile?.username || 'Guest',
+          customer_email: profile?.email || null,
           table_id: tableId || null,
           total_amount: getTotalAmount(),
           status: 'pending' as const,

@@ -380,7 +380,7 @@ export const orderApi = {
     }
   },
 
-  async createOrder(order: Omit<Order, 'id' | 'created_at' | 'updated_at' | 'currency' | 'stripe_session_id' | 'stripe_payment_intent_id' | 'customer_email' | 'customer_name' | 'completed_at'>): Promise<Order> {
+  async createOrder(order: Omit<Order, 'id' | 'created_at' | 'updated_at' | 'currency' | 'stripe_session_id' | 'stripe_payment_intent_id' | 'completed_at'>): Promise<Order> {
     // Validate payment_status
     const validPaymentStatuses = ['pending', 'processing', 'completed', 'failed', 'refunded'];
     if (!validPaymentStatuses.includes(order.payment_status)) {

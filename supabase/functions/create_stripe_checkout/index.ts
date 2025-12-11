@@ -96,10 +96,28 @@ async function createCheckoutSession(
   );
   const currency = (request.currency || 'usd').toLowerCase();
 
+  // Get customer profile for name and email
+  let customerName = 'Guest';
+  let customerEmail = null;
+  if (userId) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, username, email")
+      .eq("id", userId)
+      .single();
+    
+    if (profile) {
+      customerName = profile.full_name || profile.username || 'Guest';
+      customerEmail = profile.email;
+    }
+  }
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
       customer_id: userId,
+      customer_name: customerName,
+      customer_email: customerEmail,
       restaurant_id: request.restaurant_id,
       table_id: request.table_id || null,
       total_amount: totalAmount,

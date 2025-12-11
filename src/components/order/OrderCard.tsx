@@ -56,8 +56,6 @@ export default function OrderCard({ order, onPrint, showCustomerInfo = false, ac
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUpdated, setIsUpdated] = useState(false);
 
-  console.log(order);
-
   // Detect when order status or payment status changes
   useEffect(() => {
     setIsUpdated(true);
@@ -74,7 +72,7 @@ export default function OrderCard({ order, onPrint, showCustomerInfo = false, ac
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <CardTitle className="text-lg">
-                Order - {order.customer?.full_name} #{order.id.slice(0, 8).toUpperCase()}
+                Order #{order.id.slice(0, 8).toUpperCase()}
               </CardTitle>
               <Badge className={getStatusColor(order.status)}>
                 {order.status}
@@ -92,7 +90,7 @@ export default function OrderCard({ order, onPrint, showCustomerInfo = false, ac
                   ) : (
                     <>
                       <Banknote className="w-3 h-3" />
-                      Cash on Counter
+                      Cash on Collection
                     </>
                   )}
                 </Badge>
@@ -103,10 +101,10 @@ export default function OrderCard({ order, onPrint, showCustomerInfo = false, ac
                 <MapPin className="w-4 h-4" />
                 {order.table ? `Table ${order.table.table_number}` : 'Walk-in / Takeaway'}
               </span>
-              {showCustomerInfo && order.customer && (
+              {showCustomerInfo && (order.customer_name || order.customer) && (
                 <span className="flex items-center gap-1">
                   <User className="w-4 h-4" />
-                  {order.customer.full_name || order.customer.username}
+                  {order.customer_name || order.customer?.full_name || order.customer?.username || 'Guest'}
                 </span>
               )}
               {order.waiter && (
