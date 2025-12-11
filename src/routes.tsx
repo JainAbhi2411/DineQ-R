@@ -3,6 +3,8 @@ import type { UserRole } from './types/types';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
+import AuthCallback from './pages/AuthCallback';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 import RestaurantList from './pages/owner/RestaurantList';
 import RestaurantForm from './pages/owner/RestaurantForm';
@@ -13,11 +15,14 @@ import StaffManagement from './pages/owner/StaffManagement';
 import Analytics from './pages/owner/Analytics';
 import Reviews from './pages/owner/Reviews';
 import Promotions from './pages/owner/Promotions';
+import PointsManagement from './pages/owner/PointsManagement';
 import Settings from './pages/owner/Settings';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import CustomerProfile from './pages/customer/CustomerProfile';
 import BrowseRestaurants from './pages/customer/BrowseRestaurants';
 import Rewards from './pages/customer/Rewards';
+import RewardsPage from './pages/customer/RewardsPage';
+import PointsHistoryPage from './pages/customer/PointsHistoryPage';
 import CustomerSettings from './pages/customer/Settings';
 import ScanQR from './pages/customer/ScanQR';
 import MenuBrowsing from './pages/customer/MenuBrowsing';
@@ -56,11 +61,31 @@ const routes: RouteConfig[] = [
     visible: false,
   },
   {
+    name: 'Verify Email',
+    path: '/verify-email',
+    component: VerifyEmail,
+    visible: false,
+  },
+  {
+    name: 'Auth Callback',
+    path: '/auth/callback',
+    component: AuthCallback,
+    visible: false,
+  },
+  {
     name: 'Payment Success',
     path: '/payment-success',
     component: PaymentSuccess,
     visible: false,
     protected: true,
+  },
+  {
+    name: 'Owner Dashboard',
+    path: '/owner',
+    component: OwnerDashboard,
+    visible: false,
+    protected: true,
+    allowedRoles: ['owner'],
   },
   {
     name: 'Owner Dashboard',
@@ -151,12 +176,28 @@ const routes: RouteConfig[] = [
     allowedRoles: ['owner'],
   },
   {
+    name: 'Points Management',
+    path: '/owner/points-management',
+    component: PointsManagement,
+    visible: false,
+    protected: true,
+    allowedRoles: ['owner'],
+  },
+  {
     name: 'Settings',
     path: '/owner/settings/:restaurantId',
     component: Settings,
     visible: false,
     protected: true,
     allowedRoles: ['owner'],
+  },
+  {
+    name: 'Customer Dashboard',
+    path: '/customer',
+    component: CustomerDashboard,
+    visible: false,
+    protected: true,
+    allowedRoles: ['customer'],
   },
   {
     name: 'Customer Dashboard',
@@ -177,7 +218,15 @@ const routes: RouteConfig[] = [
   {
     name: 'Rewards',
     path: '/customer/rewards',
-    component: Rewards,
+    component: RewardsPage,
+    visible: false,
+    protected: true,
+    allowedRoles: ['customer'],
+  },
+  {
+    name: 'Points History',
+    path: '/customer/points-history',
+    component: PointsHistoryPage,
     visible: false,
     protected: true,
     allowedRoles: ['customer'],
@@ -236,7 +285,7 @@ const routes: RouteConfig[] = [
     protected: true,
     allowedRoles: ['customer'],
   },
-   {
+  {
     name: 'Camera Scan Test',
     path: '/test/camera-scan',
     component: CameraScanTest,

@@ -63,28 +63,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const username = email.includes('@') ? email.split('@')[0] : email;
-    const fullEmail = `${username}@miaoda.com`;
-    
     const { error } = await supabase.auth.signInWithPassword({
-      email: fullEmail,
+      email,
       password,
     });
     if (error) throw error;
   };
 
   const signUp = async (email: string, password: string, fullName: string, role: 'owner' | 'customer') => {
-    const username = email.includes('@') ? email.split('@')[0] : email;
-    const fullEmail = `${username}@miaoda.com`;
-    
     const { data, error } = await supabase.auth.signUp({
-      email: fullEmail,
+      email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          full_name: fullName,
+          role: role,
+        }
+      }
     });
     if (error) throw error;
 
     if (data.user) {
       await profileApi.updateProfile(data.user.id, {
+        email: email,
         full_name: fullName,
         role: role,
       });
