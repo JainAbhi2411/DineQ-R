@@ -100,6 +100,20 @@ export const restaurantApi = {
       .eq('id', id);
     if (error) throw error;
   },
+
+  async verifyCustomerLocation(
+    restaurantId: string,
+    customerLat: number,
+    customerLon: number
+  ): Promise<boolean> {
+    const { data, error } = await supabase.rpc('is_customer_at_restaurant', {
+      restaurant_id_param: restaurantId,
+      customer_lat: customerLat,
+      customer_lon: customerLon,
+    });
+    if (error) throw error;
+    return data === true;
+  },
 };
 
 export const menuCategoryApi = {

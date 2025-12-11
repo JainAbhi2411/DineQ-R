@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { restaurantApi } from '@/db/api';
 import { Restaurant, RestaurantType } from '@/types/types';
+import { geolocationService } from '@/services/geolocation.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Plus, X } from 'lucide-react';
+import { ArrowLeft, Save, Plus, X, Navigation, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import OwnerLayout from '@/components/owner/OwnerLayout';
 
@@ -31,11 +32,15 @@ export default function RestaurantForm() {
     description: '',
     phone: '',
     address: '',
+    latitude: '',
+    longitude: '',
+    location_radius_meters: '100',
   });
   const [cuisineTypes, setCuisineTypes] = useState<string[]>([]);
   const [cuisineInput, setCuisineInput] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [imageInput, setImageInput] = useState('');
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -57,6 +62,9 @@ export default function RestaurantForm() {
           description: restaurant.description || '',
           phone: restaurant.phone || '',
           address: restaurant.address || '',
+          latitude: restaurant.latitude?.toString() || '',
+          longitude: restaurant.longitude?.toString() || '',
+          location_radius_meters: restaurant.location_radius_meters?.toString() || '100',
         });
         setCuisineTypes(restaurant.cuisine_types || []);
         setImages(restaurant.images || []);
@@ -92,6 +100,53 @@ export default function RestaurantForm() {
     setImages(images.filter(img => img !== image));
   };
 
+  const handleDetectLocation = async () => {
+    if (!geolocationService.isGeolocationAvailable()) {
+      toast({
+        title: 'Not Supported',
+        description: 'Geolocation is not supported by your browser',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDetectingLocation(true);
+    try {
+      const location = await geolocationService.getCurrentPosition();
+      
+      setFormData({
+        ...formData,
+        latitude: location.latitude.toFixed(6),
+        longitude: location.longitude.toFixed(6),
+      });
+
+      toast({
+        title: 'Location Detected',
+        description: `Coordinates: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Location Error',
+        description: error.message || 'Failed to detect location',
+        variant: 'destructive',
+      });
+    } finally {
+      setDetectingLocation(false);
+    }
+  };
+
+  const handleClearLocation = () => {
+    setFormData({
+      ...formData,
+      latitude: '',
+      longitude: '',
+    });
+    toast({
+      title: 'Location Cleared',
+      description: 'GPS coordinates have been removed',
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -104,12 +159,37 @@ export default function RestaurantForm() {
       return;
     }
 
+    // Validate coordinates if provided
+    if (formData.latitude && formData.longitude) {
+      const lat = parseFloat(formData.latitude);
+      const lon = parseFloat(formData.longitude);
+      if (isNaN(lat) || lat < -90 || lat > 90) {
+        toast({
+          title: 'Error',
+          description: 'Latitude must be between -90 and 90',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (isNaN(lon) || lon < -180 || lon > 180) {
+        toast({
+          title: 'Error',
+          description: 'Longitude must be between -180 and 180',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     if (!profile) return;
 
     setLoading(true);
     try {
       const restaurantData = {
         ...formData,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        location_radius_meters: formData.location_radius_meters ? parseInt(formData.location_radius_meters) : 100,
         cuisine_types: cuisineTypes.length > 0 ? cuisineTypes : null,
         images: images.length > 0 ? images : null,
       };
@@ -249,6 +329,93 @@ export default function RestaurantForm() {
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     placeholder="e.g., Downtown, Main Street"
                   />
+                </div>
+
+                {/* Geolocation Settings */}
+                <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Location Verification (Optional)</h3>
+                    <Badge variant="secondary">For In-Restaurant Orders</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Set your restaurant's GPS coordinates to ensure customers can only order when they're physically present at your location.
+                    Leave empty to allow orders from anywhere.
+                  </p>
+                  
+                  {/* Auto-detect and Clear buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleDetectLocation}
+                      disabled={detectingLocation}
+                      className="gap-2"
+                    >
+                      {detectingLocation ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Detecting...
+                        </>
+                      ) : (
+                        <>
+                          <Navigation className="w-4 h-4" />
+                          Auto-Detect Location
+                        </>
+                      )}
+                    </Button>
+                    {(formData.latitude || formData.longitude) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleClearLocation}
+                        className="gap-2"
+                      >
+                        <X className="w-4 h-4" />
+                        Clear Location
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="latitude">Latitude</Label>
+                      <Input
+                        id="latitude"
+                        type="number"
+                        step="any"
+                        value={formData.latitude}
+                        onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                        placeholder="e.g., 40.7128"
+                      />
+                      <p className="text-xs text-muted-foreground">Range: -90 to 90</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="longitude">Longitude</Label>
+                      <Input
+                        id="longitude"
+                        type="number"
+                        step="any"
+                        value={formData.longitude}
+                        onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                        placeholder="e.g., -74.0060"
+                      />
+                      <p className="text-xs text-muted-foreground">Range: -180 to 180</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="location_radius_meters">Allowed Radius (meters)</Label>
+                      <Input
+                        id="location_radius_meters"
+                        type="number"
+                        min="1"
+                        value={formData.location_radius_meters}
+                        onChange={(e) => setFormData({ ...formData, location_radius_meters: e.target.value })}
+                        placeholder="100"
+                      />
+                      <p className="text-xs text-muted-foreground">Default: 100m</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -54,6 +54,9 @@ export interface Restaurant {
   address: string | null;
   average_rating: number;
   opening_hours: WeeklyHours | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_radius_meters: number | null;
   created_at: string;
   updated_at: string;
 }

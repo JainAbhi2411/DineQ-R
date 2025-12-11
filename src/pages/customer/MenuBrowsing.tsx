@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { restaurantApi, menuCategoryApi, menuItemApi, tableApi, orderApi, promotionApi } from '@/db/api';
 import { Restaurant, MenuCategory, MenuItem, ItemType, RestaurantType, MenuItemVariant, CartItem, OrderWithItems, PromotionValidation, Promotion } from '@/types/types';
 import { llmService, ParsedOrderItem } from '@/services/llm.service';
+import { geolocationService, GeolocationCoordinates } from '@/services/geolocation.service';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +34,8 @@ import {
   List,
   AlertCircle,
   Tag,
-  Store
+  Store,
+  Navigation
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TableSelectionDialog from '@/components/customer/TableSelectionDialog';
@@ -81,6 +83,10 @@ export default function MenuBrowsing() {
   const [addToExistingDialogOpen, setAddToExistingDialogOpen] = useState(false);
   const [offersModalOpen, setOffersModalOpen] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<PromotionValidation | null>(null);
+  const [customerLocation, setCustomerLocation] = useState<GeolocationCoordinates | null>(null);
+  const [locationVerified, setLocationVerified] = useState<boolean>(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [checkingLocation, setCheckingLocation] = useState(false);
   const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   useEffect(() => {
@@ -375,6 +381,14 @@ export default function MenuBrowsing() {
       setCategories(categoriesData);
       setMenuItems(itemsData);
       setPromotions(promotionsData);
+
+      // Check if restaurant requires location verification
+      if (restaurantData?.latitude && restaurantData?.longitude) {
+        await verifyCustomerLocation(restaurantData);
+      } else {
+        // No location verification required
+        setLocationVerified(true);
+      }
     } catch (error: any) {
       console.error('[MenuBrowsing] Error loading data:', error);
       toast({
@@ -384,6 +398,55 @@ export default function MenuBrowsing() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const verifyCustomerLocation = async (restaurantData: Restaurant) => {
+    if (!restaurantData.latitude || !restaurantData.longitude) {
+      setLocationVerified(true);
+      return;
+    }
+
+    setCheckingLocation(true);
+    setLocationError(null);
+
+    try {
+      // Get customer's current location
+      const location = await geolocationService.getCurrentPosition();
+      setCustomerLocation(location);
+
+      // Verify location with backend
+      const isAtRestaurant = await restaurantApi.verifyCustomerLocation(
+        restaurantData.id,
+        location.latitude,
+        location.longitude
+      );
+
+      setLocationVerified(isAtRestaurant);
+
+      if (!isAtRestaurant) {
+        const distance = geolocationService.calculateDistance(
+          location.latitude,
+          location.longitude,
+          restaurantData.latitude,
+          restaurantData.longitude
+        );
+        setLocationError(
+          `You must be at the restaurant to place an order. You are ${geolocationService.formatDistance(distance)} away.`
+        );
+      }
+    } catch (error: any) {
+      console.error('[MenuBrowsing] Location verification error:', error);
+      setLocationError(error.message || 'Unable to verify your location');
+      setLocationVerified(false);
+    } finally {
+      setCheckingLocation(false);
+    }
+  };
+
+  const handleRetryLocation = async () => {
+    if (restaurant) {
+      await verifyCustomerLocation(restaurant);
     }
   };
 
@@ -703,6 +766,16 @@ export default function MenuBrowsing() {
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
+
+    // Check location verification first
+    if (!locationVerified) {
+      toast({
+        title: 'Location Required',
+        description: locationError || 'You must be at the restaurant to place an order',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     // If no table is selected, show table selection dialog
     if (!tableId) {
@@ -990,6 +1063,43 @@ export default function MenuBrowsing() {
           </div>
         </div>
       </div>
+
+      {/* Location Verification Banner */}
+      {restaurant?.latitude && restaurant?.longitude && (
+        <div className="sticky top-[120px] xl:top-[140px] z-35 bg-background border-b">
+          <div className="max-w-7xl mx-auto px-3 xl:px-6 py-2">
+            {checkingLocation && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Navigation className="w-4 h-4 animate-pulse" />
+                <span>Verifying your location...</span>
+              </div>
+            )}
+            {!checkingLocation && locationVerified && (
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <Navigation className="w-4 h-4" />
+                <span>✓ Location verified - You can place orders</span>
+              </div>
+            )}
+            {!checkingLocation && !locationVerified && locationError && (
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-sm text-destructive flex-1">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span className="line-clamp-2">{locationError}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRetryLocation}
+                  className="h-7 text-xs shrink-0"
+                >
+                  <Navigation className="w-3 h-3 mr-1" />
+                  Retry
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="sticky top-[120px] xl:top-[140px] z-30 bg-background border-b shadow-sm">
@@ -1658,12 +1768,16 @@ export default function MenuBrowsing() {
               <Button 
                 onClick={handleCheckout} 
                 size="lg" 
-                className="w-full h-14 text-base font-bold bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all group"
+                disabled={!locationVerified || checkingLocation}
+                className="w-full h-14 text-base font-bold bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span className="flex-1 text-left">Proceed to Checkout</span>
+                <span className="flex-1 text-left">
+                  {!locationVerified && !checkingLocation ? 'Location Required' : 'Proceed to Checkout'}
+                </span>
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{formatCurrency(cartTotal)}</span>
-                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  {locationVerified && <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
+                  {!locationVerified && !checkingLocation && <AlertCircle className="w-5 h-5" />}
                 </div>
               </Button>
             </div>
