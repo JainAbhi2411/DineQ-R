@@ -32,7 +32,8 @@ import {
   LayoutGrid,
   List,
   AlertCircle,
-  Tag
+  Tag,
+  Store
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TableSelectionDialog from '@/components/customer/TableSelectionDialog';
@@ -977,11 +978,15 @@ export default function MenuBrowsing() {
                 )}
               </div>
             </div>
-            {restaurant.images?.[0] && (
-              <div className="w-16 h-16 xl:w-20 xl:h-20 rounded-lg overflow-hidden shrink-0 border-2 border-primary/20">
+            <div className="w-16 h-16 xl:w-20 xl:h-20 rounded-lg overflow-hidden shrink-0 border-2 border-primary/20">
+              {restaurant.images?.[0] ? (
                 <img src={restaurant.images[0]} alt={restaurant.name} className="w-full h-full object-cover" />
-              </div>
-            )}
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <Store className="w-8 h-8 xl:w-10 xl:h-10 text-muted-foreground" />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1455,51 +1460,97 @@ export default function MenuBrowsing() {
         )}
       </div>
 
-      {/* Floating Cart Button */}
+      {/* Floating Cart Button - Zomato Style */}
       {cartItemCount > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md animate-slide-up">
           <Button
             onClick={() => setCartOpen(true)}
             size="lg"
-            className="w-full h-14 text-base font-bold shadow-2xl"
+            className="w-full h-16 text-base font-bold shadow-2xl bg-primary hover:bg-primary/90 relative overflow-hidden group"
           >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            View Cart ({cartItemCount} {cartItemCount === 1 ? 'item' : 'items'})
-            <span className="ml-auto">{formatCurrency(cartTotal)}</span>
-            <ChevronRight className="w-5 h-5 ml-2" />
+            {/* Animated background effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-primary-glow/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            <div className="relative flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <ShoppingCart className="w-6 h-6" />
+                  <span className="absolute -top-2 -right-2 bg-background text-primary text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-primary">
+                    {cartItemCount}
+                  </span>
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-semibold">View Cart</span>
+                  <span className="text-xs opacity-90">
+                    {cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold">{formatCurrency(cartTotal)}</span>
+                <ChevronRight className="w-5 h-5" />
+              </div>
+            </div>
           </Button>
         </div>
       )}
 
-      {/* Cart Sheet */}
+      {/* Cart Sheet - Zomato Style */}
       <Sheet open={cartOpen} onOpenChange={setCartOpen}>
         <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0">
-          <SheetHeader className="p-4 xl:p-6 border-b">
-            <SheetTitle className="text-xl xl:text-2xl">Your Cart ({cartItemCount} items)</SheetTitle>
+          <SheetHeader className="p-4 xl:p-6 border-b bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ShoppingCart className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <SheetTitle className="text-xl xl:text-2xl">Your Cart</SheetTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {cartItemCount} {cartItemCount === 1 ? 'item' : 'items'} • {restaurant?.name || 'Restaurant'}
+                  </p>
+                </div>
+              </div>
+            </div>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto p-4 xl:p-6">
             {cart.length === 0 ? (
               <div className="text-center py-16">
-                <ShoppingCart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Your cart is empty</p>
+                <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                  <ShoppingCart className="w-12 h-12 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Your cart is empty</h3>
+                <p className="text-sm text-muted-foreground mb-4">Add items from the menu to get started</p>
+                <Button variant="outline" onClick={() => setCartOpen(false)}>
+                  Browse Menu
+                </Button>
               </div>
             ) : (
-              <div className="space-y-4">
-                {cart.map((cartItem) => (
-                  <Card key={cartItem.id} className="overflow-hidden">
+              <div className="space-y-3">
+                {cart.map((cartItem, index) => (
+                  <Card 
+                    key={cartItem.id} 
+                    className="overflow-hidden hover:shadow-md transition-shadow"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
                     <CardContent className="p-4">
                       <div className="flex gap-3">
                         {/* Item Image */}
-                        {cartItem.menu_item.image_url && (
-                          <div className="w-16 h-16 xl:w-20 xl:h-20 rounded-lg overflow-hidden shrink-0">
+                        <div className="w-16 h-16 xl:w-20 xl:h-20 rounded-lg overflow-hidden shrink-0">
+                          {cartItem.menu_item.image_url ? (
                             <img
                               src={cartItem.menu_item.image_url}
                               alt={cartItem.menu_item.name}
                               className="w-full h-full object-cover"
                             />
-                          </div>
-                        )}
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
+                              <ChefHat className="w-6 h-6 xl:w-8 xl:h-8 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
 
                         {/* Item Details */}
                         <div className="flex-1 min-w-0">
@@ -1604,9 +1655,16 @@ export default function MenuBrowsing() {
                 </div>
               </div>
 
-              <Button onClick={handleCheckout} size="lg" className="w-full text-base font-bold">
-                Proceed to Checkout
-                <ChevronRight className="w-5 h-5 ml-2" />
+              <Button 
+                onClick={handleCheckout} 
+                size="lg" 
+                className="w-full h-14 text-base font-bold bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all group"
+              >
+                <span className="flex-1 text-left">Proceed to Checkout</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{formatCurrency(cartTotal)}</span>
+                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </div>
               </Button>
             </div>
           )}
@@ -1644,15 +1702,19 @@ export default function MenuBrowsing() {
           {selectedItem && (
             <div className="space-y-4">
               {/* Image */}
-              {selectedItem.image_url && (
-                <div className="w-full h-64 rounded-lg overflow-hidden">
+              <div className="w-full h-64 rounded-lg overflow-hidden">
+                {selectedItem.image_url ? (
                   <img
                     src={selectedItem.image_url}
                     alt={selectedItem.name}
                     className="w-full h-full object-cover"
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="w-full h-full bg-muted flex items-center justify-center">
+                    <ChefHat className="w-20 h-20 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
 
               {/* Description */}
               {selectedItem.description && (
