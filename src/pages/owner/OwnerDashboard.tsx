@@ -329,6 +329,10 @@ export default function OwnerDashboard() {
                         <span className="text-muted-foreground">
                           {order.table ? `Table ${order.table.table_number}` : 'No table assigned'}
                         </span>
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          {order.customer_name ? `${order.customer_name}` : 'Guest'}
+                        </span>
                       </div>
                       
                       <div className="border-t border-border pt-3">

@@ -1,6 +1,6 @@
 // Service Worker for DineQR PWA
 // IMPORTANT: Increment this version number when deploying updates
-const VERSION = '1.0.10';
+const VERSION = '1.0.11';
 const CACHE_NAME = `dineqr-v${VERSION}`;
 const RUNTIME_CACHE = `dineqr-runtime-v${VERSION}`;
 

@@ -90,7 +90,7 @@ export default function OrderCard({ order, onPrint, showCustomerInfo = false, ac
                   ) : (
                     <>
                       <Banknote className="w-3 h-3" />
-                      Cash on Collection
+                      Cash on Counter
                     </>
                   )}
                 </Badge>
