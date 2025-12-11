@@ -26,6 +26,9 @@ import type {
   PromotionWithMenuItems,
   RestaurantSettings,
   AnalyticsData,
+  WeeklyTask,
+  UserTaskProgress,
+  WeeklyTaskWithProgress,
 } from '@/types/types';
 
 export const profileApi = {
@@ -1088,5 +1091,290 @@ export const analyticsApi = {
       popularItems,
       revenueByDate,
     };
+  },
+
+  async getCustomerPoints(userId: string) {
+    const { data, error } = await supabase
+      .from('customer_points')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getPointTransactions(userId: string, limit = 50) {
+    const { data, error } = await supabase
+      .from('point_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async awardPoints(
+    userId: string,
+    points: number,
+    activityType: string,
+    description: string,
+    orderId?: string,
+    metadata?: Record<string, any>
+  ) {
+    const { data, error } = await supabase.rpc('award_points_rpc', {
+      p_user_id: userId,
+      p_points: points,
+      p_activity_type: activityType,
+      p_description: description,
+      p_order_id: orderId || null,
+      p_metadata: metadata || {},
+    });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getRewardsCatalog() {
+    const { data, error } = await supabase
+      .from('rewards_catalog')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async getAllRewards() {
+    const { data, error } = await supabase
+      .from('rewards_catalog')
+      .select('*')
+      .order('display_order', { ascending: true });
+
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async redeemReward(userId: string, rewardId: string) {
+    const { data, error } = await supabase.rpc('redeem_reward_rpc', {
+      p_user_id: userId,
+      p_reward_id: rewardId,
+    });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getRedeemedRewards(userId: string) {
+    const { data, error } = await supabase
+      .from('redeemed_rewards')
+      .select(`
+        *,
+        reward:rewards_catalog(*)
+      `)
+      .eq('user_id', userId)
+      .order('redeemed_at', { ascending: false });
+
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async validateDiscountCode(discountCode: string, orderTotal: number) {
+    const { data, error } = await supabase.rpc('validate_discount_code_rpc', {
+      p_discount_code: discountCode,
+      p_order_total: orderTotal,
+    });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async markDiscountUsed(discountCode: string, orderId: string) {
+    const { data, error } = await supabase.rpc('mark_discount_used_rpc', {
+      p_discount_code: discountCode,
+      p_order_id: orderId,
+    });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getAllCustomerPoints() {
+    const { data, error } = await supabase
+      .from('customer_points')
+      .select(`
+        *,
+        profile:profiles(id, username, email, full_name)
+      `)
+      .order('lifetime_points', { ascending: false });
+
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async createReward(reward: Partial<import('@/types/types').RewardsCatalog>) {
+    const { data, error } = await supabase
+      .from('rewards_catalog')
+      .insert(reward)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async updateReward(id: string, updates: Partial<import('@/types/types').RewardsCatalog>) {
+    const { data, error } = await supabase
+      .from('rewards_catalog')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteReward(id: string) {
+    const { error } = await supabase
+      .from('rewards_catalog')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+};
+
+export const pointsApi = {
+  getCustomerPoints: analyticsApi.getCustomerPoints,
+  getPointTransactions: analyticsApi.getPointTransactions,
+  awardPoints: analyticsApi.awardPoints,
+  getRewardsCatalog: analyticsApi.getRewardsCatalog,
+  getAllRewards: analyticsApi.getAllRewards,
+  redeemReward: analyticsApi.redeemReward,
+  getRedeemedRewards: analyticsApi.getRedeemedRewards,
+  validateDiscountCode: analyticsApi.validateDiscountCode,
+  markDiscountUsed: analyticsApi.markDiscountUsed,
+  getAllCustomerPoints: analyticsApi.getAllCustomerPoints,
+  createReward: analyticsApi.createReward,
+  updateReward: analyticsApi.updateReward,
+  deleteReward: analyticsApi.deleteReward,
+};
+
+export const weeklyTasksApi = {
+  async getUserWeeklyTasks(userId: string): Promise<WeeklyTaskWithProgress[]> {
+    const { data, error } = await supabase.rpc('get_user_weekly_tasks', {
+      p_user_id: userId,
+    });
+
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async getAllWeeklyTasks(): Promise<WeeklyTask[]> {
+    const { data, error } = await supabase
+      .from('weekly_tasks')
+      .select('*')
+      .eq('is_active', true)
+      .order('difficulty', { ascending: true })
+      .order('display_order', { ascending: true });
+
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async createWeeklyTask(task: {
+    title: string;
+    description: string;
+    task_type: string;
+    target_value: number;
+    points_reward: number;
+    icon?: string;
+    difficulty?: string;
+    week_start_date?: string;
+    week_end_date?: string;
+  }): Promise<{ success: boolean; task_id?: string; error?: string }> {
+    const { data, error } = await supabase.rpc('create_weekly_task_rpc', {
+      p_title: task.title,
+      p_description: task.description,
+      p_task_type: task.task_type,
+      p_target_value: task.target_value,
+      p_points_reward: task.points_reward,
+      p_icon: task.icon || null,
+      p_difficulty: task.difficulty || 'medium',
+      p_week_start_date: task.week_start_date || null,
+      p_week_end_date: task.week_end_date || null,
+    });
+
+    if (error) throw error;
+    return data as { success: boolean; task_id?: string; error?: string };
+  },
+
+  async updateWeeklyTask(
+    id: string,
+    updates: Partial<WeeklyTask>
+  ): Promise<WeeklyTask | null> {
+    const { data, error } = await supabase
+      .from('weekly_tasks')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteWeeklyTask(id: string): Promise<void> {
+    const { error } = await supabase.from('weekly_tasks').delete().eq('id', id);
+
+    if (error) throw error;
+  },
+
+  async incrementTaskProgress(
+    userId: string,
+    taskType: string,
+    incrementValue: number = 1,
+    orderId?: string
+  ): Promise<{ success: boolean; message?: string }> {
+    const { data, error } = await supabase.rpc('increment_task_progress_rpc', {
+      p_user_id: userId,
+      p_task_type: taskType,
+      p_increment_value: incrementValue,
+      p_order_id: orderId || null,
+    });
+
+    if (error) throw error;
+    return data as { success: boolean; message?: string };
+  },
+
+  async getUserTaskProgress(
+    userId: string,
+    taskId: string
+  ): Promise<UserTaskProgress | null> {
+    const { data, error } = await supabase
+      .from('user_task_progress')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('task_id', taskId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getAllTaskProgress(): Promise<UserTaskProgress[]> {
+    const { data, error } = await supabase
+      .from('user_task_progress')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
   },
 };

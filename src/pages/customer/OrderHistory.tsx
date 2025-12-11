@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Clock, Eye } from 'lucide-react';
+import { Clock, Eye, Star } from 'lucide-react';
 import { supabase } from '@/db/supabase';
 import OrderCard from '@/components/order/OrderCard';
 import PrintBill from '@/components/order/PrintBill';
 import CustomerLayout from '@/components/customer/CustomerLayout';
+import ReviewDialog from '@/components/customer/ReviewDialog';
 
 export default function OrderHistory() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function OrderHistory() {
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [printOrder, setPrintOrder] = useState<OrderWithItems | null>(null);
+  const [reviewOrder, setReviewOrder] = useState<OrderWithItems | null>(null);
   const ordersRef = useRef<OrderWithItems[]>([]);
 
   // Keep ref in sync with state
@@ -159,15 +161,28 @@ export default function OrderHistory() {
               order={order}
               onPrint={setPrintOrder}
               actions={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate(`/order-tracking/${order.id}`)}
-                  className="flex items-center gap-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  Track Order
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/order-tracking/${order.id}`)}
+                    className="flex items-center gap-2"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Track Order
+                  </Button>
+                  {(order.status === 'completed' || order.status === 'served') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setReviewOrder(order)}
+                      className="flex items-center gap-2"
+                    >
+                      <Star className="w-4 h-4" />
+                      Review
+                    </Button>
+                  )}
+                </div>
               }
             />
           ))}
@@ -183,6 +198,22 @@ export default function OrderHistory() {
           {printOrder && <PrintBill order={printOrder} />}
         </DialogContent>
       </Dialog>
+
+      {/* Review Dialog */}
+      {reviewOrder && (
+        <ReviewDialog
+          open={!!reviewOrder}
+          onOpenChange={(open) => !open && setReviewOrder(null)}
+          restaurantId={reviewOrder.restaurant_id}
+          orderId={reviewOrder.id}
+          onReviewSubmitted={() => {
+            toast({
+              title: 'Review Submitted',
+              description: 'Thank you for your feedback!',
+            });
+          }}
+        />
+      )}
       </div>
     </CustomerLayout>
   );

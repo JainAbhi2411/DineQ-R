@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFormatters } from '@/hooks/useFormatters';
 import { ArrowLeft, CreditCard, ShoppingBag, Wallet, Banknote, Tag } from 'lucide-react';
 import { supabase } from '@/db/supabase';
+import { useTaskProgress } from '@/hooks/useTaskProgress';
 
 export default function Checkout() {
   const { restaurantId } = useParams();
@@ -20,6 +21,7 @@ export default function Checkout() {
   const { profile } = useAuth();
   const { toast } = useToast();
   const { formatCurrency, formatDateTime, formatDate } = useFormatters();
+  const { trackOrderPlaced, trackRestaurantVisit } = useTaskProgress();
   
   const tableIdFromUrl = searchParams.get('table');
   const { cart, restaurant, tableId: tableIdFromState, appliedPromo } = location.state || {};
@@ -143,6 +145,12 @@ export default function Checkout() {
             console.error('Failed to record promotion usage:', error);
             // Don't fail the order if promotion recording fails
           }
+        }
+
+        // Track weekly tasks: order placed and restaurant visit
+        await trackOrderPlaced(order.id, getTotalAmount());
+        if (restaurantId) {
+          await trackRestaurantVisit(restaurantId);
         }
 
         toast({

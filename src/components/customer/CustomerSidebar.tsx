@@ -10,7 +10,8 @@ import {
   Menu,
   Store,
   Award,
-  Settings
+  Settings,
+  Target
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,38 +35,7 @@ export default function CustomerSidebar({
   const location = useLocation();
   const { profile } = useAuth();
 
-  const menuItems = useMemo(() => [
-    {
-      title: 'Home',
-      icon: Home,
-      href: '/customer/dashboard',
-    },
-    {
-      title: 'Browse Restaurants',
-      icon: Store,
-      href: '/customer/restaurants',
-    },
-    {
-      title: 'Order History',
-      icon: History,
-      href: '/customer/orders',
-    },
-    {
-      title: 'Rewards',
-      icon: Award,
-      href: '/customer/rewards',
-    },
-    {
-      title: 'Profile',
-      icon: User,
-      href: '/customer/profile',
-    },
-    {
-      title: 'Settings',
-      icon: Settings,
-      href: '/customer/settings',
-    },
-  ], []);
+  const menuItems = useMemo(() => [    {      title: 'Home',      icon: Home,      href: '/customer/dashboard',    },    {      title: 'Browse Restaurants',      icon: Store,      href: '/customer/restaurants',    },    {      title: 'Order History',      icon: History,      href: '/customer/orders',    },    {      title: 'Rewards',      icon: Award,      href: '/customer/rewards',    },    {      title: 'Weekly Tasks',      icon: Target,      href: '/customer/weekly-tasks',    },    {      title: 'Profile',      icon: User,      href: '/customer/profile',    },    {      title: 'Settings',      icon: Settings,      href: '/customer/settings',    },  ], []);
 
   return (
     <aside className={cn(

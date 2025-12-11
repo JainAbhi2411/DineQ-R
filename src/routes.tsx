@@ -13,11 +13,16 @@ import StaffManagement from './pages/owner/StaffManagement';
 import Analytics from './pages/owner/Analytics';
 import Reviews from './pages/owner/Reviews';
 import Promotions from './pages/owner/Promotions';
+import PointsManagement from './pages/owner/PointsManagement';
+import WeeklyTasksManagement from './pages/owner/WeeklyTasksManagement';
 import Settings from './pages/owner/Settings';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import CustomerProfile from './pages/customer/CustomerProfile';
 import BrowseRestaurants from './pages/customer/BrowseRestaurants';
 import Rewards from './pages/customer/Rewards';
+import RewardsPage from './pages/customer/RewardsPage';
+import PointsHistoryPage from './pages/customer/PointsHistoryPage';
+import WeeklyTasks from './pages/customer/WeeklyTasks';
 import CustomerSettings from './pages/customer/Settings';
 import ScanQR from './pages/customer/ScanQR';
 import MenuBrowsing from './pages/customer/MenuBrowsing';
@@ -151,6 +156,22 @@ const routes: RouteConfig[] = [
     allowedRoles: ['owner'],
   },
   {
+    name: 'Points Management',
+    path: '/owner/points-management',
+    component: PointsManagement,
+    visible: false,
+    protected: true,
+    allowedRoles: ['owner'],
+  },
+  {
+    name: 'Weekly Tasks Management',
+    path: '/owner/weekly-tasks',
+    component: WeeklyTasksManagement,
+    visible: false,
+    protected: true,
+    allowedRoles: ['owner'],
+  },
+  {
     name: 'Settings',
     path: '/owner/settings/:restaurantId',
     component: Settings,
@@ -177,7 +198,23 @@ const routes: RouteConfig[] = [
   {
     name: 'Rewards',
     path: '/customer/rewards',
-    component: Rewards,
+    component: RewardsPage,
+    visible: false,
+    protected: true,
+    allowedRoles: ['customer'],
+  },
+  {
+    name: 'Points History',
+    path: '/customer/points-history',
+    component: PointsHistoryPage,
+    visible: false,
+    protected: true,
+    allowedRoles: ['customer'],
+  },
+  {
+    name: 'Weekly Tasks',
+    path: '/customer/weekly-tasks',
+    component: WeeklyTasks,
     visible: false,
     protected: true,
     allowedRoles: ['customer'],
@@ -236,7 +273,7 @@ const routes: RouteConfig[] = [
     protected: true,
     allowedRoles: ['customer'],
   },
-   {
+  {
     name: 'Camera Scan Test',
     path: '/test/camera-scan',
     component: CameraScanTest,

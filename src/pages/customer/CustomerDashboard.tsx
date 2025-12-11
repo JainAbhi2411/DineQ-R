@@ -13,6 +13,7 @@ import { supabase } from '@/db/supabase';
 import CustomerLayout from '@/components/customer/CustomerLayout';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import PointsWidget from '@/components/customer/PointsWidget';
 
 export default function CustomerDashboard() {
   const { profile } = useAuth();
@@ -149,7 +150,7 @@ export default function CustomerDashboard() {
         </div>
 
         {/* QR Scanner Section */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 xl:gap-6 mb-6 xl:mb-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:gap-6 mb-6 xl:mb-8">
           {/* Scan QR Code */}
           <Card className="glass border-2 border-border hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 animate-fade-in-up overflow-hidden group">
             <div className="scan-line" />
@@ -198,6 +199,11 @@ export default function CustomerDashboard() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Points Widget */}
+          <div className="animate-fade-in-up animation-delay-300">
+            <PointsWidget />
+          </div>
         </div>
 
         {/* Current Orders Section */}

@@ -370,3 +370,110 @@ export interface UpdatePromotionInput {
   is_active?: boolean;
   terms?: string;
 }
+
+export type TierLevel = 'bronze' | 'silver' | 'gold' | 'platinum';
+export type TransactionType = 'earned' | 'redeemed';
+export type ActivityType = 'order' | 'review' | 'referral' | 'first_order' | 'daily_login' | 'discount' | 'bonus' | 'admin_adjustment';
+
+export interface CustomerPoints {
+  user_id: string;
+  total_points: number;
+  lifetime_points: number;
+  points_redeemed: number;
+  tier_level: TierLevel;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PointTransaction {
+  id: string;
+  user_id: string;
+  transaction_type: TransactionType;
+  activity_type: ActivityType;
+  points: number;
+  order_id: string | null;
+  description: string;
+  metadata: Record<string, any>;
+  created_at: string;
+}
+
+export interface RewardsCatalog {
+  id: string;
+  name: string;
+  description: string;
+  points_required: number;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  max_discount: number | null;
+  min_order_value: number;
+  valid_days: number;
+  is_active: boolean;
+  usage_limit: number | null;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RedeemedReward {
+  id: string;
+  user_id: string;
+  reward_id: string;
+  points_spent: number;
+  discount_code: string;
+  is_used: boolean;
+  used_on_order_id: string | null;
+  expires_at: string;
+  redeemed_at: string;
+  used_at: string | null;
+}
+
+export interface PointsWithProfile extends CustomerPoints {
+  profile?: Profile;
+}
+
+export interface RewardWithDetails extends RewardsCatalog {
+  can_redeem?: boolean;
+  times_redeemed?: number;
+}
+
+export type WeeklyTaskType = 'order_count' | 'review_count' | 'visit_count' | 'spending_amount' | 'login_days' | 'game';
+export type TaskDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface WeeklyTask {
+  id: string;
+  title: string;
+  description: string;
+  task_type: WeeklyTaskType;
+  target_value: number;
+  points_reward: number;
+  icon: string | null;
+  difficulty: TaskDifficulty;
+  is_active: boolean;
+  week_start_date: string;
+  week_end_date: string;
+  created_by: string | null;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserTaskProgress {
+  id: string;
+  user_id: string;
+  task_id: string;
+  current_value: number;
+  is_completed: boolean;
+  completed_at: string | null;
+  points_awarded: boolean;
+  week_start_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WeeklyTaskWithProgress extends WeeklyTask {
+  current_value: number;
+  is_completed: boolean;
+  completed_at: string | null;
+  progress_percentage: number;
+  user_progress?: UserTaskProgress;
+}
