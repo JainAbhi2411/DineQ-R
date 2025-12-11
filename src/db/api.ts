@@ -1377,4 +1377,40 @@ export const weeklyTasksApi = {
     if (error) throw error;
     return Array.isArray(data) ? data : [];
   },
+
+  async getAll(): Promise<WeeklyTask[]> {
+    const { data, error } = await supabase
+      .from('weekly_tasks')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+};
+
+export const rewardsApi = {
+  getAll: analyticsApi.getAllRewards,
+  getActive: analyticsApi.getRewardsCatalog,
+  create: analyticsApi.createReward,
+  update: analyticsApi.updateReward,
+  delete: analyticsApi.deleteReward,
+  redeem: analyticsApi.redeemReward,
+  getRedeemed: analyticsApi.getRedeemedRewards,
+  validateDiscount: analyticsApi.validateDiscountCode,
+  markUsed: analyticsApi.markDiscountUsed,
+
+  async getAllRedemptions() {
+    const { data, error } = await supabase
+      .from('redeemed_rewards')
+      .select(`
+        *,
+        reward:rewards_catalog(*),
+        customer:profiles(id, full_name, email)
+      `)
+      .order('redeemed_at', { ascending: false });
+
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
 };
