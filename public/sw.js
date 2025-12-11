@@ -1,8 +1,11 @@
 // Service Worker for DineQR PWA
 // IMPORTANT: Increment this version number when deploying updates
-const VERSION = '1.0.8';
+const VERSION = '1.0.9';
 const CACHE_NAME = `dineqr-v${VERSION}`;
 const RUNTIME_CACHE = `dineqr-runtime-v${VERSION}`;
+
+// Build timestamp to force cache invalidation on deployment
+const BUILD_TIMESTAMP = new Date().toISOString();
 
 // Assets to cache on install
 const STATIC_ASSETS = [
@@ -12,19 +15,24 @@ const STATIC_ASSETS = [
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing...');
+  console.log(`[Service Worker] Installing version ${VERSION} (${BUILD_TIMESTAMP})...`);
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[Service Worker] Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll(STATIC_ASSETS).catch((err) => {
+        console.warn('[Service Worker] Failed to cache some assets:', err);
+        // Continue even if some assets fail to cache
+        return Promise.resolve();
+      });
     })
   );
+  // Force immediate activation
   self.skipWaiting();
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating...');
+  console.log(`[Service Worker] Activating version ${VERSION}...`);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -35,9 +43,12 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      console.log(`[Service Worker] Version ${VERSION} activated successfully`);
     })
   );
-  self.clients.claim();
+  // Take control of all pages immediately
+  return self.clients.claim();
 });
 
 // Fetch event - network first for HTML, cache for assets
@@ -50,8 +61,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip Supabase API requests (always fetch fresh)
-  if (url.hostname.includes('supabase') || url.hostname.includes('api-integrations')) {
+  // NEVER cache Supabase API requests or authentication endpoints
+  if (
+    url.hostname.includes('supabase') || 
+    url.hostname.includes('api-integrations') ||
+    url.pathname.includes('/auth/') ||
+    url.pathname.includes('/rest/v1/')
+  ) {
+    event.respondWith(
+      fetch(request, {
+        cache: 'no-store', // Force fresh fetch, no caching
+        credentials: 'include',
+      })
+    );
     return;
   }
 

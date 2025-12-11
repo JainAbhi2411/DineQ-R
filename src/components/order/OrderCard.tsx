@@ -56,6 +56,8 @@ export default function OrderCard({ order, onPrint, showCustomerInfo = false, ac
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUpdated, setIsUpdated] = useState(false);
 
+  console.log(order);
+
   // Detect when order status or payment status changes
   useEffect(() => {
     setIsUpdated(true);

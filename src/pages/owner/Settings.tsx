@@ -12,6 +12,7 @@ import { settingsApi } from '@/db/api';
 import type { RestaurantSettings } from '@/types/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from '@/contexts/SettingsContext';
+import CacheManager from '@/components/common/CacheManager';
 
 interface BusinessHours {
   [key: string]: { open: string; close: string; closed: boolean };
@@ -367,6 +368,11 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Cache & Updates */}
+          <div className="lg:col-span-2">
+            <CacheManager />
+          </div>
         </div>
 
         {/* Save Button */}
