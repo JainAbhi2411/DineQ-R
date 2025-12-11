@@ -31,17 +31,37 @@ if ('serviceWorker' in navigator) {
           });
         });
         
-        // Check for updates every 30 minutes
+        // Check for updates every 30 minutes (only when tab is visible)
         setInterval(() => {
-          registration.update();
+          if (!document.hidden) {
+            registration.update();
+          }
         }, 30 * 60 * 1000);
+        
+        // Check for updates when tab becomes visible (but throttle it)
+        let lastUpdateCheck = Date.now();
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) {
+            const now = Date.now();
+            // Only check for updates if more than 5 minutes have passed
+            if (now - lastUpdateCheck > 5 * 60 * 1000) {
+              lastUpdateCheck = now;
+              registration.update();
+            }
+          }
+        });
       })
       .catch((error) => {
         console.error('Service Worker registration failed:', error);
       });
 
     // Listen for controller change (new service worker activated)
+    let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      // Prevent infinite reload loop
+      if (refreshing) return;
+      refreshing = true;
+      
       console.log('New service worker activated, reloading page...');
       window.location.reload();
     });

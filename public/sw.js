@@ -1,6 +1,6 @@
 // Service Worker for DineQR PWA
 // IMPORTANT: Increment this version number when deploying updates
-const VERSION = '1.0.11';
+const VERSION = '1.0.12';
 const CACHE_NAME = `dineqr-v${VERSION}`;
 const RUNTIME_CACHE = `dineqr-runtime-v${VERSION}`;
 
@@ -26,8 +26,8 @@ self.addEventListener('install', (event) => {
       });
     })
   );
-  // Force immediate activation
-  self.skipWaiting();
+  // Don't force immediate activation - wait for user action
+  // self.skipWaiting() is now called only when user clicks "Update Now"
 });
 
 // Activate event - clean up old caches
